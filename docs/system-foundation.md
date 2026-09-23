@@ -13,7 +13,7 @@ The user journey has four stable stages:
 3. Observe - inspect the resulting syndrome through linked representations.
 4. Decode - examine the proposed correction, residual, status, and limitations.
 
-Before Configure is implemented, the application displays a foundation state. This avoids presenting non-functional controls or implying that quantum services already exist.
+Configure is implemented as the first vertical slice. It exposes one verified qLDPC HGP fixture, calculated validation evidence, manual or seeded code-capacity setup, and an explicit confirmation state. Later stages remain descriptive rather than clickable until their scientific contracts exist.
 
 ## HCI principles applied
 
@@ -34,5 +34,8 @@ Before Configure is implemented, the application displays a foundation state. Th
 - individually named capabilities;
 - current scientific-model boundaries.
 
-The next slice will add a code registry and a verified teaching fixture without changing the shell's information architecture.
+## Configure contract
 
+The code registry reconstructs the HGP matrices from the length-3 repetition parity check. It calculates GF(2) ranks, CSS orthogonality, row and column weights, `k`, and exact X/Z distance. The API exposes this evidence through `GET /api/codes` and `GET /api/codes/{id}`. The frontend does not hard-code scientific validation claims.
+
+The next slice may consume the confirmed configuration in Inject. Configure does not currently create an error vector or scientific outcome.

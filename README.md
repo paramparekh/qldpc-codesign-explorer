@@ -2,7 +2,7 @@
 
 An HCI-focused research prototype for making the path from quantum-code structure to error syndrome and decoder evidence inspectable.
 
-This repository currently contains the system foundation: a tested FastAPI readiness boundary, a React application shell, a shared workflow model, and a restrained visual system. The Configure, Inject, Observe, and Decode capabilities will be implemented as vertical slices on top of this foundation.
+This repository currently contains the tested system foundation and the complete Configure stage. Configure loads a mathematically verified qLDPC hypergraph-product fixture, presents the calculated code evidence, captures the error-source assumptions, and confirms a reproducible configuration. Inject, Observe, and Decode will be implemented as later vertical slices.
 
 ## Repository layout
 
@@ -57,5 +57,4 @@ npm test
 
 ## Current boundary
 
-The foundation intentionally does not simulate a code, inject errors, calculate a syndrome, or run a decoder yet. Its job is to make those capabilities straightforward to add without coupling scientific state to presentation components.
-
+The product is qLDPC-only. Configure provides the verified HGP repetition-3 `[[13,1,3]]` teaching fixture and manual or seeded code-capacity setup. It does not inject errors, calculate syndromes, run a decoder, estimate a threshold, or make a hardware-feasibility claim.

@@ -44,8 +44,8 @@ def get_system_status() -> SystemStatus:
             Capability(
                 id="code-registry",
                 label="Verified code registry",
-                status="planned",
-                detail="The first verified CSS teaching fixture is the next implementation slice.",
+                status="ready",
+                detail="The verified qLDPC HGP [[13,1,3]] teaching fixture is available.",
             ),
             Capability(
                 id="syndrome-service",
@@ -61,9 +61,8 @@ def get_system_status() -> SystemStatus:
             ),
         ],
         model_boundaries=[
-            "No quantum code is loaded in the foundation release.",
-            "No error, syndrome, or decoder result is being simulated.",
-            "Future MVP calculations will use code-capacity noise and perfect syndrome measurements.",
+            "Configure exposes one verified qLDPC HGP [[13,1,3]] fixture.",
+            "No error, syndrome, or decoder result is produced in Configure.",
+            "The MVP uses code-capacity noise and perfect syndrome measurements.",
         ],
     )
-

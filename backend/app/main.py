@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.codes import router as codes_router
 from app.api.system import router as system_router
 
 
@@ -19,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(system_router, prefix="/api")
+app.include_router(codes_router, prefix="/api")
 
 
 @app.get("/", tags=["system"])
@@ -28,4 +30,3 @@ def read_root() -> dict[str, str]:
         "status_endpoint": "/api/system/status",
         "documentation": "/docs",
     }
-
