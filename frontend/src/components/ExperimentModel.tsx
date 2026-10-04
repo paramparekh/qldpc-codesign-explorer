@@ -3,13 +3,13 @@ import { useConfiguration, type ErrorModel } from "../state/configuration";
 const choices: Array<{ id: ErrorModel; title: string; description: string }> = [
   {
     id: "manual_pauli",
-    title: "Manual Pauli errors",
-    description: "Choose exact qubits and X, Y, or Z errors in the Inject stage.",
+    title: "Choose errors by hand",
+    description: "Select each qubit and assign an X, Y, or Z error.",
   },
   {
     id: "seeded_code_capacity",
-    title: "Seeded code-capacity noise",
-    description: "Generate a reproducible independent error pattern from p and a seed.",
+    title: "Generate errors from a seed",
+    description: "Use a probability and seed to create an error pattern that can be repeated.",
   },
 ];
 
@@ -18,11 +18,11 @@ export function ExperimentModel() {
 
   return (
     <section className="panel model-panel" aria-labelledby="model-heading">
-      <p className="eyebrow">Experiment model</p>
-      <h2 id="model-heading">Choose how errors will be introduced</h2>
+      <p className="eyebrow">Error setup</p>
+      <h2 id="model-heading">Choose how to create errors</h2>
 
       <fieldset className="choice-fieldset">
-        <legend>Error source</legend>
+        <legend>Error method</legend>
         <div className="choice-grid">
           {choices.map((choice) => (
             <label
@@ -47,9 +47,9 @@ export function ExperimentModel() {
       </fieldset>
 
       {state.errorModel === "seeded_code_capacity" && (
-        <div className="seed-controls" aria-label="Seeded noise settings">
+        <div className="seed-controls" aria-label="Generated error settings">
           <label>
-            <span>Physical error probability, p</span>
+            <span>Error probability, p</span>
             <input
               aria-describedby="probability-help"
               max="0.5"
@@ -72,17 +72,17 @@ export function ExperimentModel() {
               type="number"
               value={state.seed}
             />
-            <small>Stored with the run for reproducibility.</small>
+            <small>Use the same seed to create the same errors again.</small>
           </label>
         </div>
       )}
 
       <div className="fixed-assumptions">
-        <h3>Model assumptions</h3>
+        <h3>Current settings</h3>
         <ul>
-          <li><span>Noise scope</span><strong>Data-qubit errors only</strong></li>
-          <li><span>Measurement</span><strong>Perfect syndrome measurement</strong></li>
-          <li><span>Channels</span><strong>Separate CSS X and Z components</strong></li>
+          <li><span>Errors applied to</span><strong>Data qubits only</strong></li>
+          <li><span>Syndrome measurements</span><strong>No measurement errors</strong></li>
+          <li><span>Error tracking</span><strong>X and Z parts tracked separately</strong></li>
         </ul>
       </div>
     </section>

@@ -8,12 +8,12 @@ The application uses a tested Python service for quantum-code operations and a R
 
 The user journey has four stable stages:
 
-1. Configure - choose a verified code and disclose all model assumptions.
-2. Inject - add manual or seeded code-capacity errors.
-3. Observe - inspect the resulting syndrome through linked representations.
-4. Decode - examine the proposed correction, residual, status, and limitations.
+1. Configure - choose the qLDPC code and error settings.
+2. Inject - choose errors by hand or generate them from a saved seed.
+3. Observe - see which checks detect the errors and why.
+4. Decode - apply a correction and check whether it succeeds.
 
-Configure is implemented as the first vertical slice. It exposes one verified qLDPC HGP fixture, calculated validation evidence, manual or seeded code-capacity setup, and an explicit confirmation state. Later stages remain descriptive rather than clickable until their scientific contracts exist.
+All four stages are implemented. Configure provides one checked qLDPC HGP code and two error-selection methods. Inject creates and saves the Pauli-error vector. Observe calculates both syndrome components and connects every result to the check support and relevant error qubits. Decode selects a correction, calculates the residual, and checks whether the residual preserves the encoded information.
 
 ## HCI principles applied
 
@@ -38,4 +38,18 @@ Configure is implemented as the first vertical slice. It exposes one verified qL
 
 The code registry reconstructs the HGP matrices from the length-3 repetition parity check. It calculates GF(2) ranks, CSS orthogonality, row and column weights, `k`, and exact X/Z distance. The API exposes this evidence through `GET /api/codes` and `GET /api/codes/{id}`. The frontend does not hard-code scientific validation claims.
 
-The next slice may consume the confirmed configuration in Inject. Configure does not currently create an error vector or scientific outcome.
+## Inject contract
+
+`POST /api/injections` accepts the confirmed code identifier and either one-based manual Pauli assignments or the configured probability and seed. It returns the 13-qubit Pauli pattern, binary X/Z components, error weight, Pauli counts, and reproducibility metadata. Seeded generation uses the versioned `splitmix64-v1` generator so the same inputs recreate the same pattern.
+
+The frontend keeps qubit numbers visible, supports keyboard operation, summarizes affected qubits without relying on color, and asks users to save their selection before continuing.
+
+## Observe contract
+
+`POST /api/observations` accepts the saved code version and Pauli-error vector. X-type check results are calculated as `H_X e_Z^T`, and Z-type check results are calculated as `H_Z e_X^T`. A Y error contributes to both components. The response includes each syndrome bit, each check's qubit support, and the relevant error qubits so the interface can explain the result without redoing the calculation.
+
+## Decode contract
+
+`POST /api/decoders` recomputes the syndrome from the saved Pauli error. It independently selects minimum-weight X and Z correction components through exact search, with deterministic tie-breaking. The service applies the correction, verifies that both residual syndrome components are zero, and tests residual X and Z components against their stabilizer row spaces. A zero or stabilizer residual is a logical success; a commuting residual outside the stabilizer is reported as a logical failure.
+
+Exact search is appropriate for the current 13-qubit learning code and provides a reference result for validation. It is not presented as a scalable decoder for larger qLDPC codes.

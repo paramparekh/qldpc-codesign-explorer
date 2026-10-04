@@ -12,39 +12,45 @@ type LoadState =
   | { phase: "ready"; code: CodeDetail };
 
 export function ConfigureWorkspace() {
-  const [loadState, setLoadState] = useState<LoadState>({ phase: "loading" });
-  const { dispatch } = useConfiguration();
+  const { state, dispatch } = useConfiguration();
+  const [loadState, setLoadState] = useState<LoadState>(
+    state.code ? { phase: "ready", code: state.code } : { phase: "loading" },
+  );
 
   const loadCode = useCallback(async (signal?: AbortSignal) => {
     setLoadState({ phase: "loading" });
     try {
       const codes = await fetchCodes(signal);
-      if (!codes.length) throw new Error("No verified qLDPC fixtures are available.");
+      if (!codes.length) throw new Error("No qLDPC codes are available.");
       const code = await fetchCode(codes[0].id, signal);
-      dispatch({ type: "select-code", codeId: code.id });
+      dispatch({ type: "select-code", code });
       setLoadState({ phase: "ready", code });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setLoadState({
         phase: "error",
-        message: error instanceof Error ? error.message : "The qLDPC fixture could not be loaded.",
+        message: error instanceof Error ? error.message : "The qLDPC code could not be loaded.",
       });
     }
   }, [dispatch]);
 
   useEffect(() => {
+    if (state.code) {
+      setLoadState({ phase: "ready", code: state.code });
+      return;
+    }
     const controller = new AbortController();
     void loadCode(controller.signal);
     return () => controller.abort();
-  }, [loadCode]);
+  }, [loadCode, state.code]);
 
   if (loadState.phase === "loading") {
     return (
       <section className="panel configure-loading" aria-live="polite">
         <span className="loading-dot" aria-hidden="true" />
         <div>
-          <h2>Loading verified qLDPC fixture</h2>
-          <p>Reconstructing the configuration evidence from the local API.</p>
+          <h2>Loading the qLDPC code</h2>
+          <p>Getting the code details and checks.</p>
         </div>
       </section>
     );
@@ -53,10 +59,10 @@ export function ConfigureWorkspace() {
   if (loadState.phase === "error") {
     return (
       <section className="panel configure-error" role="alert">
-        <p className="eyebrow">Configuration unavailable</p>
-        <h2>The verified qLDPC fixture could not be loaded</h2>
+        <p className="eyebrow">Setup unavailable</p>
+        <h2>The qLDPC code could not be loaded</h2>
         <p>{loadState.message}</p>
-        <p>Your configuration has not been changed.</p>
+        <p>Your setup has not been changed.</p>
         <button className="secondary-action" onClick={() => void loadCode()} type="button">Try again</button>
       </section>
     );
@@ -72,4 +78,3 @@ export function ConfigureWorkspace() {
     </div>
   );
 }
-

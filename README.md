@@ -1,8 +1,8 @@
 # qLDPC CoDesign Explorer
 
-An HCI-focused research prototype for making the path from quantum-code structure to error syndrome and decoder evidence inspectable.
+An HCI-focused research prototype for exploring how qLDPC codes detect and correct quantum errors.
 
-This repository currently contains the tested system foundation and the complete Configure stage. Configure loads a mathematically verified qLDPC hypergraph-product fixture, presents the calculated code evidence, captures the error-source assumptions, and confirms a reproducible configuration. Inject, Observe, and Decode will be implemented as later vertical slices.
+The complete Configure → Inject → Observe → Decode workflow is implemented. Configure loads a mathematically checked qLDPC hypergraph-product code and saves the error settings. Inject creates Pauli errors through direct qubit selection or a saved probability and seed. Observe calculates both CSS syndrome components and explains every check result. Decode selects an exact minimum-weight correction and verifies whether the logical information was preserved.
 
 ## Repository layout
 
@@ -57,4 +57,4 @@ npm test
 
 ## Current boundary
 
-The product is qLDPC-only. Configure provides the verified HGP repetition-3 `[[13,1,3]]` teaching fixture and manual or seeded code-capacity setup. It does not inject errors, calculate syndromes, run a decoder, estimate a threshold, or make a hardware-feasibility claim.
+The product is qLDPC-only. Configure provides the HGP repetition-3 `[[13,1,3]]` code. Inject produces a repeatable Pauli-error vector. Observe calculates the syndrome with exact binary arithmetic. Decode uses exact minimum-weight CSS search and distinguishes stabilizer-equivalent success from logical failure. The current system does not estimate thresholds or make hardware-feasibility claims.

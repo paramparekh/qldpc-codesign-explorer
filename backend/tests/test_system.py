@@ -29,8 +29,9 @@ def test_system_status_is_explicit_about_ready_and_planned_capabilities() -> Non
     assert statuses["workspace-shell"] == "ready"
     assert statuses["workflow-contract"] == "ready"
     assert statuses["code-registry"] == "ready"
-    assert statuses["syndrome-service"] == "planned"
-    assert statuses["decoder-service"] == "planned"
+    assert statuses["injection-service"] == "ready"
+    assert statuses["syndrome-service"] == "ready"
+    assert statuses["decoder-service"] == "ready"
     assert len(payload["model_boundaries"]) == 3
 
 
@@ -73,4 +74,4 @@ def test_unknown_code_returns_a_specific_404() -> None:
     response = asyncio.run(get("/api/codes/not-a-fixture"))
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Unknown qLDPC fixture."
+    assert response.json()["detail"] == "The requested qLDPC code was not found."

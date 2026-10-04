@@ -35,8 +35,8 @@ export function SystemReadiness() {
     <section className="panel readiness-panel" aria-labelledby="readiness-heading" aria-live="polite">
       <div className="panel-heading-row">
         <div>
-          <p className="eyebrow">System readiness</p>
-          <h2 id="readiness-heading">Foundation status</h2>
+          <p className="eyebrow">System</p>
+          <h2 id="readiness-heading">Connection status</h2>
         </div>
         {request.phase === "ready" && <span className="status-badge status-ready">Connected</span>}
         {request.phase === "loading" && <span className="status-badge">Checking</span>}
@@ -46,7 +46,7 @@ export function SystemReadiness() {
       {request.phase === "loading" && (
         <div className="status-message">
           <span className="loading-dot" aria-hidden="true" />
-          Checking the local service boundary…
+          Connecting to the local service...
         </div>
       )}
 
@@ -82,4 +82,3 @@ export function SystemReadiness() {
     </section>
   );
 }
-

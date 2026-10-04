@@ -1,0 +1,4 @@
+https://people.eecs.berkeley.edu/~jswright/quantumcodingtheory24/
+https://arxiv.org/pdf/0903.0566
+https://who.rocq.inria.fr/Andre.Chailloux/LectureNotesLeverrier.pdf#page=33.17
+https://qldpc.readthedocs.io/?utm_source=chatgpt.com

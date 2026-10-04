@@ -119,13 +119,13 @@ def _detail(fixture: CodeFixture) -> CodeDetail:
                 id="binary",
                 label="Binary matrices",
                 status="passed",
-                detail="Every H_X and H_Z entry is in GF(2).",
+                detail="Every matrix entry is 0 or 1.",
             ),
             ValidationEvidence(
                 id="dimensions",
                 label="Compatible dimensions",
                 status="passed",
-                detail="Both check matrices have 13 data-qubit columns.",
+                detail="Both check matrices use the same 13 data qubits.",
             ),
             ValidationEvidence(
                 id="orthogonality",
@@ -158,5 +158,5 @@ def read_codes() -> tuple[CodeSummary, ...]:
 def read_code(fixture_id: str) -> CodeDetail:
     fixture = get_fixture(fixture_id)
     if fixture is None:
-        raise HTTPException(status_code=404, detail="Unknown qLDPC fixture.")
+        raise HTTPException(status_code=404, detail="The requested qLDPC code was not found.")
     return _detail(fixture)

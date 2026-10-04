@@ -46,12 +46,12 @@ def _build_hgp_rep3() -> CodeFixture:
     fixture = CodeFixture(
         schema_version=1,
         id="hgp_rep3_v1",
-        name="HGP repetition-3 teaching code",
+        name="HGP repetition-3 code",
         family="Quantum LDPC",
         construction="Hypergraph product",
         description=(
-            "A small, fully verified qLDPC fixture constructed from two length-3 classical "
-            "repetition-code parity checks."
+            "A small qLDPC code built from two length-3 repetition codes. "
+            "Its parameters and checks are calculated by the system."
         ),
         h_x=h_x,
         h_z=h_z,
@@ -68,11 +68,11 @@ def _build_hgp_rep3() -> CodeFixture:
     )
 
     if shape(h_x) != (6, 13) or shape(h_z) != (6, 13):
-        raise RuntimeError("The teaching fixture has an unexpected matrix shape.")
+        raise RuntimeError("The qLDPC code has an unexpected matrix shape.")
     if any(value for row in matmul(h_x, transpose(h_z)) for value in row):
-        raise RuntimeError("The teaching fixture violates CSS orthogonality.")
+        raise RuntimeError("The qLDPC code does not satisfy CSS orthogonality.")
     if (fixture.n, fixture.k, fixture.d) != (13, 1, 3):
-        raise RuntimeError("The teaching fixture parameters failed verification.")
+        raise RuntimeError("The qLDPC code parameters could not be verified.")
     return fixture
 
 

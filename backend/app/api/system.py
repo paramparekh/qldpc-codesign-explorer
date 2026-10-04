@@ -22,7 +22,7 @@ class SystemStatus(BaseModel):
 
 @router.get("/status", response_model=SystemStatus)
 def get_system_status() -> SystemStatus:
-    """Return explicit capability readiness for the application shell."""
+    """Return the features that are ready to use."""
 
     return SystemStatus(
         service="qldpc-codesign-explorer-api",
@@ -31,38 +31,44 @@ def get_system_status() -> SystemStatus:
         capabilities=[
             Capability(
                 id="workspace-shell",
-                label="Workspace shell",
+                label="Workspace",
                 status="ready",
-                detail="Application layout and workflow navigation are available.",
+                detail="The application layout and step navigation are available.",
             ),
             Capability(
                 id="workflow-contract",
-                label="Workflow contract",
+                label="Project steps",
                 status="ready",
-                detail="Configure, Inject, Observe, and Decode have stable identities.",
+                detail="Configure, Inject, Observe, and Decode are available as project steps.",
             ),
             Capability(
                 id="code-registry",
-                label="Verified code registry",
+                label="qLDPC code",
                 status="ready",
-                detail="The verified qLDPC HGP [[13,1,3]] teaching fixture is available.",
+                detail="The HGP [[13,1,3]] qLDPC code is available.",
+            ),
+            Capability(
+                id="injection-service",
+                label="Error selection",
+                status="ready",
+                detail="Users can choose errors by hand or generate them from a seed.",
             ),
             Capability(
                 id="syndrome-service",
-                label="Syndrome service",
-                status="planned",
-                detail="No scientific calculation is exposed by this foundation release.",
+                label="Syndrome calculation",
+                status="ready",
+                detail="Observe calculates X-type and Z-type check results and explains each result.",
             ),
             Capability(
                 id="decoder-service",
-                label="Decoder service",
-                status="planned",
-                detail="Decoder integration begins after the observable syndrome path is verified.",
+                label="Decoder",
+                status="ready",
+                detail="Decode applies an exact minimum-weight CSS correction and checks its logical effect.",
             ),
         ],
         model_boundaries=[
-            "Configure exposes one verified qLDPC HGP [[13,1,3]] fixture.",
-            "No error, syndrome, or decoder result is produced in Configure.",
-            "The MVP uses code-capacity noise and perfect syndrome measurements.",
+            "Configure provides one HGP [[13,1,3]] qLDPC code.",
+            "Decode uses exact minimum-weight search for the current 13-qubit code.",
+            "Errors affect data qubits only, and syndrome measurements have no errors.",
         ],
     )

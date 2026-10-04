@@ -21,7 +21,7 @@ export function CodeEvidence({ code }: { code: CodeDetail }) {
       <div className="section-heading-row">
         <div>
           <p className="eyebrow">qLDPC code</p>
-          <h2 id="code-heading">Verified teaching fixture</h2>
+          <h2 id="code-heading">Selected code</h2>
         </div>
         <span className="status-badge status-ready">Selected</span>
       </div>
@@ -31,7 +31,7 @@ export function CodeEvidence({ code }: { code: CodeDetail }) {
           <div className="tag-row" aria-label="Code classification">
             <span>Quantum LDPC</span>
             <span>Hypergraph product</span>
-            <span>Fixture v{code.version}</span>
+            <span>Version {code.version}</span>
           </div>
           <h3>{code.name}</h3>
           <p>{code.description}</p>
@@ -54,8 +54,8 @@ export function CodeEvidence({ code }: { code: CodeDetail }) {
       <div className="evidence-section">
         <div className="subheading-row">
           <div>
-            <h3>Validation evidence</h3>
-            <p>Calculated by the backend from the fixture matrices.</p>
+            <h3>Code checks</h3>
+            <p>These results are calculated from the code matrices.</p>
           </div>
           <span className="evidence-count">{code.validation.length}/{code.validation.length} passed</span>
         </div>
@@ -76,7 +76,7 @@ export function CodeEvidence({ code }: { code: CodeDetail }) {
       </div>
 
       <details className="technical-details">
-        <summary>Matrix and construction details</summary>
+        <summary>Show matrix details</summary>
         <div className="technical-grid">
           <dl>
             <div><dt>H<sub>X</sub> shape</dt><dd>{code.matrix_metadata.h_x_shape.join(" x ")}</dd></div>
@@ -90,7 +90,7 @@ export function CodeEvidence({ code }: { code: CodeDetail }) {
             <h4>Matrix convention</h4>
             <p><strong>H<sub>X</sub>:</strong> {code.matrix_convention.h_x}</p>
             <p><strong>H<sub>Z</sub>:</strong> {code.matrix_convention.h_z}</p>
-            <h4>Provenance</h4>
+            <h4>How this code was built</h4>
             <p>{code.provenance}</p>
           </div>
         </div>

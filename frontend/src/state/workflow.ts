@@ -12,25 +12,24 @@ export const workflowStages: WorkflowStage[] = [
     id: "configure",
     order: 1,
     label: "Configure",
-    description: "Choose a verified code and disclose the model assumptions.",
+    description: "Choose the qLDPC code and error settings.",
   },
   {
     id: "inject",
     order: 2,
     label: "Inject",
-    description: "Add a manual or reproducible code-capacity error.",
+    description: "Choose errors by hand or generate them from a saved seed.",
   },
   {
     id: "observe",
     order: 3,
     label: "Observe",
-    description: "Inspect the syndrome through coordinated representations.",
+    description: "See which checks detect the error.",
   },
   {
     id: "decode",
     order: 4,
     label: "Decode",
-    description: "Review the correction, residual, status, and limitations.",
+    description: "Apply a correction and check whether it succeeds.",
   },
 ];
-

@@ -13,7 +13,7 @@ export function ConfigurationSummary({ code }: { code: CodeDetail }) {
       <div className="section-heading-row">
         <div>
           <p className="eyebrow">Review</p>
-          <h2 id="summary-heading">Configuration summary</h2>
+          <h2 id="summary-heading">Review your setup</h2>
         </div>
         <span className={`status-badge ${isConfirmed ? "status-ready" : ""}`}>
           {isConfirmed ? "Ready" : "Editing"}
@@ -24,8 +24,8 @@ export function ConfigurationSummary({ code }: { code: CodeDetail }) {
         <div><dt>Code</dt><dd>{code.name}</dd></div>
         <div><dt>Parameters</dt><dd>[[{code.parameters.n}, {code.parameters.k}, {code.parameters.d}]]</dd></div>
         <div>
-          <dt>Error source</dt>
-          <dd>{state.errorModel === "manual_pauli" ? "Manual Pauli" : "Seeded code-capacity"}</dd>
+          <dt>Error method</dt>
+          <dd>{state.errorModel === "manual_pauli" ? "Chosen by hand" : "Generated from a seed"}</dd>
         </div>
         {state.errorModel === "seeded_code_capacity" && (
           <>
@@ -34,7 +34,7 @@ export function ConfigurationSummary({ code }: { code: CodeDetail }) {
           </>
         )}
         <div><dt>Measurement</dt><dd>{code.measurement_model}</dd></div>
-        <div><dt>Validation</dt><dd>{code.validation.length}/{code.validation.length} checks passed</dd></div>
+        <div><dt>Code checks</dt><dd>{code.validation.length}/{code.validation.length} passed</dd></div>
       </dl>
 
       {!isValid && (
@@ -48,13 +48,18 @@ export function ConfigurationSummary({ code }: { code: CodeDetail }) {
           <div className="confirmation-message" role="status">
             <span aria-hidden="true">OK</span>
             <div>
-              <strong>Configuration ready</strong>
-              <p>The verified inputs are ready.</p>
+              <strong>Setup complete</strong>
+              <p>You can now add errors.</p>
             </div>
           </div>
-          <button className="secondary-action" onClick={() => dispatch({ type: "edit" })} type="button">
-            Edit configuration
-          </button>
+          <div className="action-stack">
+            <button className="primary-action" onClick={() => dispatch({ type: "open-inject" })} type="button">
+              Continue to error selection
+            </button>
+            <button className="secondary-action" onClick={() => dispatch({ type: "edit" })} type="button">
+              Change setup
+            </button>
+          </div>
         </>
       ) : (
         <button
@@ -63,7 +68,7 @@ export function ConfigurationSummary({ code }: { code: CodeDetail }) {
           onClick={() => dispatch({ type: "confirm" })}
           type="button"
         >
-          Confirm configuration
+          Save setup
         </button>
       )}
 
