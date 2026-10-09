@@ -4,8 +4,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.codes.registry import get_fixture
-from app.core.decoding import ComponentCorrection, decode_css_error
+from app.core.decoding import ComponentCorrection
 from app.core.injection import InjectionPattern, Pauli, pattern_from_components, pattern_from_paulis
+from app.decoders import get_decoder, list_decoders
 
 
 router = APIRouter(prefix="/decoders", tags=["decoders"])
@@ -45,6 +46,7 @@ class DecoderMetadata(BaseModel):
     id: str
     name: str
     method: str
+    scaling_note: str
 
 
 class DecodeResponse(BaseModel):
@@ -98,11 +100,15 @@ def decode_error(request: DecodeRequest) -> DecodeResponse:
             detail="The saved code version does not match the current code. Return to Configure and try again.",
         )
 
+    decoder = get_decoder("exact-css-min-weight-v1")
+    if decoder is None:
+        raise HTTPException(status_code=503, detail="The exact decoder is not available.")
+
     try:
         if len(request.qubits) != code.n:
             raise ValueError(f"The error must contain exactly {code.n} qubits.")
         original = pattern_from_paulis(request.qubits)
-        result = decode_css_error(code.h_x, code.h_z, original.error_x, original.error_z)
+        result = decoder.decode(code, original)
         correction = pattern_from_components(
             result.x_component.correction,
             result.z_component.correction,
@@ -129,12 +135,10 @@ def decode_error(request: DecodeRequest) -> DecodeResponse:
         code_id=code.id,
         code_version=code.version,
         decoder=DecoderMetadata(
-            id="exact-css-min-weight-v1",
-            name="Exact minimum-weight CSS decoder",
-            method=(
-                "Checks every X and Z correction for this code and selects the lightest ones. "
-                "If several choices have the same weight, it always uses the same choice."
-            ),
+            id=decoder.metadata.id,
+            name=decoder.metadata.name,
+            method=decoder.metadata.method,
+            scaling_note=decoder.metadata.scaling_note,
         ),
         status="corrected" if result.success else "logical_failure",
         success=result.success,
@@ -150,4 +154,17 @@ def decode_error(request: DecodeRequest) -> DecodeResponse:
         ),
         x_component=_component("X", "Z-type checks", result.x_component),
         z_component=_component("Z", "X-type checks", result.z_component),
+    )
+
+
+@router.get("", response_model=tuple[DecoderMetadata, ...])
+def read_decoders() -> tuple[DecoderMetadata, ...]:
+    return tuple(
+        DecoderMetadata(
+            id=decoder.metadata.id,
+            name=decoder.metadata.name,
+            method=decoder.metadata.method,
+            scaling_note=decoder.metadata.scaling_note,
+        )
+        for decoder in list_decoders()
     )

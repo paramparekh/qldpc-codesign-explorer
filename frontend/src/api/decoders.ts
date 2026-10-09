@@ -28,7 +28,7 @@ export type DecodeResult = {
   schema_version: number;
   code_id: string;
   code_version: string;
-  decoder: { id: string; name: string; method: string };
+  decoder: { id: string; name: string; method: string; scaling_note: string };
   status: "corrected" | "logical_failure";
   success: boolean;
   message: string;

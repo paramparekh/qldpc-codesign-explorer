@@ -109,7 +109,7 @@ function ComponentDecision({ result }: { result: ComponentDecode }) {
   );
 }
 
-function DecodeView({ code, result }: { code: CodeDetail; result: DecodeResult }) {
+function DecodeView({ code, result, onContinue }: { code: CodeDetail; result: DecodeResult; onContinue: () => void }) {
   const residualSignals =
     result.residual.x_check_syndrome.reduce((sum, value) => sum + value, 0) +
     result.residual.z_check_syndrome.reduce((sum, value) => sum + value, 0);
@@ -184,6 +184,14 @@ function DecodeView({ code, result }: { code: CodeDetail; result: DecodeResult }
           </p>
         </details>
       </section>
+
+      <section className="next-stage-row" aria-label="Next stage">
+        <div>
+          <strong>Measure performance over many trials</strong>
+          <p>Use the Results stage to compare logical-error rates at several physical error probabilities.</p>
+        </div>
+        <button className="primary-action" onClick={onContinue} type="button">Continue to Results</button>
+      </section>
     </>
   );
 }
@@ -244,7 +252,9 @@ export function DecodeWorkspace({ code, injection }: { code: CodeDetail; injecti
         </section>
       )}
 
-      {request.phase === "ready" && <DecodeView code={code} result={request.result} />}
+      {request.phase === "ready" && (
+        <DecodeView code={code} onContinue={() => dispatch({ type: "open-results" })} result={request.result} />
+      )}
     </div>
   );
 }

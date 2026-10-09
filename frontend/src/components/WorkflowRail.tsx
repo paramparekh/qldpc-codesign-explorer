@@ -17,13 +17,19 @@ export function WorkflowRail() {
           const injectionComplete = stage.id === "inject" && state.injection?.phase === "confirmed";
           const observationComplete = stage.id === "observe" && Boolean(state.observation);
           const decodingComplete = stage.id === "decode" && Boolean(state.decoding);
+          const resultsComplete = stage.id === "results" && state.experiment?.status === "completed";
+          const resultsRunning =
+            stage.id === "results" &&
+            state.experiment !== null &&
+            ["queued", "running", "cancel_requested"].includes(state.experiment.status);
           const isCurrent = stage.id === state.activeStage;
           const isNext =
             (stage.id === "inject" && state.phase === "confirmed" && state.activeStage === "configure") ||
             (stage.id === "observe" && state.injection?.phase === "confirmed" && !state.observation) ||
-            (stage.id === "decode" && Boolean(state.observation) && !state.decoding);
-          const complete = isComplete || injectionComplete || observationComplete || decodingComplete;
-          const status = complete ? "Complete" : isCurrent ? "Current" : isNext ? "Next" : "Later";
+            (stage.id === "decode" && Boolean(state.observation) && !state.decoding) ||
+            (stage.id === "results" && Boolean(state.decoding) && !state.experiment);
+          const complete = isComplete || injectionComplete || observationComplete || decodingComplete || resultsComplete;
+          const status = complete ? "Complete" : isCurrent ? "Current" : resultsRunning ? "Running" : isNext ? "Next" : "Later";
           return (
             <li
               aria-current={isCurrent ? "step" : undefined}

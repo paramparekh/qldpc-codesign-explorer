@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.codes import router as codes_router
 from app.api.decoders import router as decoders_router
+from app.api.experiments import router as experiments_router
 from app.api.injections import router as injections_router
 from app.api.observations import router as observations_router
 from app.api.system import router as system_router
@@ -25,6 +26,7 @@ app.add_middleware(
 app.include_router(system_router, prefix="/api")
 app.include_router(codes_router, prefix="/api")
 app.include_router(decoders_router, prefix="/api")
+app.include_router(experiments_router, prefix="/api")
 app.include_router(injections_router, prefix="/api")
 app.include_router(observations_router, prefix="/api")
 

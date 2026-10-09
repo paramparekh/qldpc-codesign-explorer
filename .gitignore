@@ -13,3 +13,4 @@ frontend/.vite/
 .env
 .env.local
 *.log
+backend/data/*.sqlite3*

@@ -2,7 +2,7 @@
 
 An HCI-focused research prototype for exploring how qLDPC codes detect and correct quantum errors.
 
-The complete Configure → Inject → Observe → Decode workflow is implemented. Configure loads a mathematically checked qLDPC hypergraph-product code and saves the error settings. Inject creates Pauli errors through direct qubit selection or a saved probability and seed. Observe calculates both CSS syndrome components and explains every check result. Decode selects an exact minimum-weight correction and verifies whether the logical information was preserved.
+The complete Configure → Inject → Observe → Decode → Results workflow is implemented. Configure loads a mathematically checked qLDPC hypergraph-product code and saves the error settings. Inject creates Pauli errors through direct qubit selection or a saved probability and seed. Observe calculates both CSS syndrome components and explains every check result. Decode selects an exact minimum-weight correction and verifies whether the logical information was preserved. Results runs reproducible batch experiments and presents logical-error rates, uncertainty intervals, and saved failures.
 
 ## Repository layout
 
@@ -32,6 +32,8 @@ python -m venv .venv
 
 The readiness endpoint is available at `http://127.0.0.1:8000/api/system/status`.
 
+Batch experiment endpoints are available at `http://127.0.0.1:8000/api/experiments`. Experiments run in the background, report progress, support cancellation, and remain available after completion.
+
 Run the backend tests with:
 
 ```powershell
@@ -57,4 +59,4 @@ npm test
 
 ## Current boundary
 
-The product is qLDPC-only. Configure provides the HGP repetition-3 `[[13,1,3]]` code. Inject produces a repeatable Pauli-error vector. Observe calculates the syndrome with exact binary arithmetic. Decode uses exact minimum-weight CSS search and distinguishes stabilizer-equivalent success from logical failure. The current system does not estimate thresholds or make hardware-feasibility claims.
+The product is qLDPC-only. Configure provides the HGP repetition-3 `[[13,1,3]]` code. Inject produces a repeatable Pauli-error vector. Observe calculates the syndrome with exact binary arithmetic. Decode uses exact minimum-weight CSS search and distinguishes stabilizer-equivalent success from logical failure. Batch experiments estimate logical-error rates with Wilson confidence intervals. They do not yet constitute a threshold study, and the current system makes no hardware-feasibility claims.

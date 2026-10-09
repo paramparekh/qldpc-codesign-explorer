@@ -1,4 +1,4 @@
-export type WorkflowStageId = "configure" | "inject" | "observe" | "decode";
+export type WorkflowStageId = "configure" | "inject" | "observe" | "decode" | "results";
 
 export type WorkflowStage = {
   id: WorkflowStageId;
@@ -31,5 +31,11 @@ export const workflowStages: WorkflowStage[] = [
     order: 4,
     label: "Decode",
     description: "Apply a correction and check whether it succeeds.",
+  },
+  {
+    id: "results",
+    order: 5,
+    label: "Results",
+    description: "Run repeated trials and compare logical-error rates.",
   },
 ];

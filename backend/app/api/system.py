@@ -39,7 +39,7 @@ def get_system_status() -> SystemStatus:
                 id="workflow-contract",
                 label="Project steps",
                 status="ready",
-                detail="Configure, Inject, Observe, and Decode are available as project steps.",
+                detail="Configure, Inject, Observe, Decode, and Results are available as project steps.",
             ),
             Capability(
                 id="code-registry",
@@ -64,6 +64,12 @@ def get_system_status() -> SystemStatus:
                 label="Decoder",
                 status="ready",
                 detail="Decode applies an exact minimum-weight CSS correction and checks its logical effect.",
+            ),
+            Capability(
+                id="experiment-service",
+                label="Batch experiments",
+                status="ready",
+                detail="Reproducible decoder trials can run in the background with progress and saved results.",
             ),
         ],
         model_boundaries=[

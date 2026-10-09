@@ -2,12 +2,13 @@ import { createContext, useContext, useMemo, useReducer, type Dispatch, type Rea
 
 import type { CodeDetail } from "../api/codes";
 import type { DecodeResult } from "../api/decoders";
+import type { Experiment } from "../api/experiments";
 import type { InjectionResult } from "../api/injections";
 import type { ObservationResult } from "../api/observations";
 
 export type ErrorModel = "manual_pauli" | "seeded_code_capacity";
 export type ConfigurationPhase = "editing" | "confirmed";
-export type ActiveStage = "configure" | "inject" | "observe" | "decode";
+export type ActiveStage = "configure" | "inject" | "observe" | "decode" | "results";
 export type InjectionPhase = "draft" | "confirmed";
 export type StoredInjection = InjectionResult & { phase: InjectionPhase };
 
@@ -22,6 +23,7 @@ export type ConfigurationState = {
   injection: StoredInjection | null;
   observation: ObservationResult | null;
   decoding: DecodeResult | null;
+  experiment: Experiment | null;
 };
 
 type ConfigurationAction =
@@ -39,7 +41,9 @@ type ConfigurationAction =
   | { type: "open-observe" }
   | { type: "set-observation"; result: ObservationResult }
   | { type: "open-decode" }
-  | { type: "set-decoding"; result: DecodeResult };
+  | { type: "set-decoding"; result: DecodeResult }
+  | { type: "open-results" }
+  | { type: "set-experiment"; experiment: Experiment | null };
 
 const initialState: ConfigurationState = {
   codeId: null,
@@ -52,6 +56,7 @@ const initialState: ConfigurationState = {
   injection: null,
   observation: null,
   decoding: null,
+  experiment: null,
 };
 
 function updateConfiguration(
@@ -66,6 +71,7 @@ function updateConfiguration(
     injection: null,
     observation: null,
     decoding: null,
+    experiment: null,
   };
 }
 
@@ -90,6 +96,7 @@ function reducer(state: ConfigurationState, action: ConfigurationAction): Config
         injection: null,
         observation: null,
         decoding: null,
+        experiment: null,
       };
     case "open-configure":
       return { ...state, activeStage: "configure" };
@@ -103,6 +110,7 @@ function reducer(state: ConfigurationState, action: ConfigurationAction): Config
         injection: { ...action.result, phase: action.phase },
         observation: null,
         decoding: null,
+        experiment: null,
       };
     case "edit-injection":
       return state.injection
@@ -111,6 +119,7 @@ function reducer(state: ConfigurationState, action: ConfigurationAction): Config
             injection: { ...state.injection, phase: "draft" },
             observation: null,
             decoding: null,
+            experiment: null,
           }
         : state;
     case "confirm-injection":
@@ -122,11 +131,15 @@ function reducer(state: ConfigurationState, action: ConfigurationAction): Config
         ? { ...state, activeStage: "observe" }
         : state;
     case "set-observation":
-      return { ...state, observation: action.result, decoding: null };
+      return { ...state, observation: action.result, decoding: null, experiment: null };
     case "open-decode":
       return state.observation ? { ...state, activeStage: "decode" } : state;
     case "set-decoding":
       return { ...state, decoding: action.result };
+    case "open-results":
+      return state.decoding ? { ...state, activeStage: "results" } : state;
+    case "set-experiment":
+      return { ...state, experiment: action.experiment };
   }
 }
 

@@ -3,6 +3,7 @@ import { ConfigureWorkspace } from "./components/ConfigureWorkspace";
 import { DecodeWorkspace } from "./components/DecodeWorkspace";
 import { InjectWorkspace } from "./components/InjectWorkspace";
 import { ObserveWorkspace } from "./components/ObserveWorkspace";
+import { ResultsWorkspace } from "./components/ResultsWorkspace";
 import { WorkflowRail } from "./components/WorkflowRail";
 import { ConfigurationProvider, useConfiguration } from "./state/configuration";
 
@@ -20,8 +21,15 @@ function Workspace() {
   const isInject = state.activeStage === "inject";
   const isObserve = state.activeStage === "observe";
   const isDecode = state.activeStage === "decode";
+  const isResults = state.activeStage === "results";
 
-  const stageCopy = isDecode
+  const stageCopy = isResults
+    ? {
+        eyebrow: "Stage 5 / Results",
+        title: "Measure decoder performance across repeated trials.",
+        description: "Run the same qLDPC code at several physical error probabilities and compare how often decoding preserves the logical information.",
+      }
+    : isDecode
     ? {
         eyebrow: "Stage 4 / Decode",
         title: "Apply a correction and check the result.",
@@ -69,7 +77,9 @@ function Workspace() {
             <p className="intro-copy">{stageCopy.description}</p>
           </section>
 
-          {isDecode && activeCode && state.injection ? (
+          {isResults && activeCode ? (
+            <ResultsWorkspace code={activeCode} />
+          ) : isDecode && activeCode && state.injection ? (
             <DecodeWorkspace code={activeCode} injection={state.injection} />
           ) : isObserve && activeCode && state.injection ? (
             <ObserveWorkspace code={activeCode} injection={state.injection} />

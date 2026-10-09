@@ -32,6 +32,7 @@ def test_system_status_is_explicit_about_ready_and_planned_capabilities() -> Non
     assert statuses["injection-service"] == "ready"
     assert statuses["syndrome-service"] == "ready"
     assert statuses["decoder-service"] == "ready"
+    assert statuses["experiment-service"] == "ready"
     assert len(payload["model_boundaries"]) == 3
 
 

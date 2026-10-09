@@ -164,6 +164,7 @@ function decodeResponse(payload: { qubits: Array<"I" | "X" | "Y" | "Z"> }) {
       id: "exact-css-min-weight-v1",
       name: "Exact minimum-weight CSS decoder",
       method: "Exact search for the lightest X and Z correction components with deterministic tie-breaking.",
+      scaling_note: "Exact search is a reference method for the current 13-qubit code.",
     },
     status: logicalFailure ? "logical_failure" : "corrected",
     success: !logicalFailure,
@@ -198,6 +199,89 @@ function decodeResponse(payload: { qubits: Array<"I" | "X" | "Y" | "Z"> }) {
   };
 }
 
+function experimentResponse(payload: {
+  probabilities: number[];
+  trials_per_probability: number;
+  seed: number;
+}) {
+  const points = payload.probabilities.map((probability, index) => {
+    const failures = index === 0 ? 0 : 15;
+    return {
+      probability,
+      trials_planned: payload.trials_per_probability,
+      trials_completed: payload.trials_per_probability,
+      successes: payload.trials_per_probability - failures,
+      logical_failures: failures,
+      exact_matches: payload.trials_per_probability - failures,
+      stabilizer_successes: 0,
+      logical_error_rate: failures / payload.trials_per_probability,
+      confidence_level: 0.95,
+      confidence_method: "Wilson score",
+      confidence_interval: index === 0 ? [0, 0.03699] : [0.09306, 0.23284],
+      average_error_weight: probability * 13,
+      average_correction_weight: probability * 10,
+      average_residual_weight: failures / payload.trials_per_probability,
+      average_decode_time_ms: 4.2,
+      runtime_seconds: 0.42,
+    };
+  });
+  const identity = Array.from({ length: 13 }, () => "I" as const);
+  const logicalX = Array.from({ length: 13 }, (_, index) => index < 3 ? "X" as const : "I" as const);
+  return {
+    id: "experiment-1",
+    status: "completed",
+    created_at: "2026-10-03T12:00:00Z",
+    started_at: "2026-10-03T12:00:00Z",
+    finished_at: "2026-10-03T12:00:01Z",
+    config: {
+      code_id: "hgp_rep3_v1",
+      code_version: "1.0.0",
+      decoder_id: "exact-css-min-weight-v1",
+      probabilities: payload.probabilities,
+      trials_per_probability: payload.trials_per_probability,
+      seed: payload.seed,
+      confidence_level: 0.95,
+      saved_failure_limit: 10,
+    },
+    progress: {
+      completed_trials: payload.probabilities.length * payload.trials_per_probability,
+      total_trials: payload.probabilities.length * payload.trials_per_probability,
+      fraction: 1,
+      current_probability: null,
+      current_point_trials: 0,
+    },
+    result: {
+      schema_version: 1,
+      decoder_id: "exact-css-min-weight-v1",
+      decoder_name: "Exact minimum-weight CSS decoder",
+      code_id: "hgp_rep3_v1",
+      code_version: "1.0.0",
+      batch_seed: payload.seed,
+      batch_generator_version: "blake2b-trial-seeds-v1",
+      error_generator_version: "splitmix64-v1",
+      error_model: "independent depolarizing data-qubit errors",
+      measurement_model: "perfect syndrome measurement",
+      success_criterion: "residual is empty or a stabilizer",
+      total_trials_planned: payload.probabilities.length * payload.trials_per_probability,
+      total_trials_completed: payload.probabilities.length * payload.trials_per_probability,
+      cancelled: false,
+      runtime_seconds: 1.2,
+      points,
+      saved_failures: [{
+        probability: payload.probabilities[1] ?? payload.probabilities[0],
+        trial_number: 7,
+        trial_seed: 987654,
+        error: logicalX,
+        correction: identity.map((pauli, index) => index === 2 ? "X" as const : pauli),
+        residual: logicalX,
+        x_classification: "logical",
+        z_classification: "none",
+      }],
+    },
+    error_message: null,
+  };
+}
+
 describe("Configure stage", () => {
   beforeEach(() => {
     vi.stubGlobal(
@@ -210,7 +294,10 @@ describe("Configure stage", () => {
         if (url.endsWith("/api/observations")) {
           return jsonResponse(observationResponse(JSON.parse(String(options?.body))));
         }
-        if (url.endsWith("/api/decoders")) {
+        if (url.endsWith("/api/experiments")) {
+          return jsonResponse(experimentResponse(JSON.parse(String(options?.body))));
+        }
+        if (url.endsWith("/api/decoders") && options?.method === "POST") {
           return jsonResponse(decodeResponse(JSON.parse(String(options?.body))));
         }
         return url.endsWith("/api/codes") ? jsonResponse([summary]) : jsonResponse(codeDetail);
@@ -365,5 +452,33 @@ describe("Configure stage", () => {
     expect(screen.getByLabelText("Residual, qubit 3: X")).toBeInTheDocument();
     expect(screen.getByText("Logical operation — decoding failed")).toBeInTheDocument();
     expect(screen.getByText("Residual signals").parentElement).toHaveTextContent("0");
+  });
+
+  it("runs a batch experiment and presents uncertainty and replay information", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Selected code" });
+    await user.click(screen.getByRole("button", { name: "Save setup" }));
+    await user.click(screen.getByRole("button", { name: "Continue to error selection" }));
+    await user.click(screen.getByRole("button", { name: "Save with no errors" }));
+    await user.click(screen.getByRole("button", { name: "Continue to Observe" }));
+    await screen.findByRole("heading", { name: "Observation summary" });
+    await user.click(screen.getByRole("button", { name: "Continue to Decode" }));
+    await screen.findByRole("heading", { name: "Exact minimum-weight CSS decoder" });
+    await user.click(screen.getByRole("button", { name: "Continue to Results" }));
+
+    expect(screen.getByRole("heading", { name: "Measure decoder performance across repeated trials." })).toBeInTheDocument();
+    expect(screen.getByText("500 trials across 5 points")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Start batch experiment" }));
+
+    expect(await screen.findByRole("heading", { name: "Logical-error rate by physical error probability" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /logical-error rate by physical error probability/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Batch experiment values" })).toHaveTextContent("15%");
+    expect(screen.getByText("Results").closest("li")).toHaveTextContent("Complete");
+
+    await user.click(screen.getByText("Failure 1"));
+    expect(screen.getByText("987654")).toBeInTheDocument();
+    expect(screen.getAllByText("Q1: X, Q2: X, Q3: X").length).toBeGreaterThan(0);
   });
 });
