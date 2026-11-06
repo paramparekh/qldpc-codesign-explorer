@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -69,7 +71,9 @@ def get_system_status() -> SystemStatus:
                 id="experiment-service",
                 label="Batch experiments",
                 status="ready",
-                detail="Reproducible decoder trials can run in the background with progress and saved results.",
+                detail=("Trials run in saved batches while the page is open. Reopen a saved run to resume."
+                        if os.getenv("VERCEL") == "1" else
+                        "Reproducible decoder trials can run in the background with progress and saved results."),
             ),
         ],
         model_boundaries=[

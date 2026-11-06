@@ -11,6 +11,7 @@ dependencies = [
   "fastapi==0.141.1",
   "uvicorn[standard]==0.53.0",
   "ldpc==2.4.1",
+  "vercel-blob==0.5.1",
 ]
 
 [project.optional-dependencies]
@@ -26,4 +27,7 @@ include = ["app*"]
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+
+[tool.vercel]
+entrypoint = "app.main:app"
 

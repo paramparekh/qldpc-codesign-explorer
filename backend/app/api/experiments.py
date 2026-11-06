@@ -155,6 +155,7 @@ class ExperimentResponse(BaseModel):
     progress: ExperimentProgressResponse
     result: SimulationResultResponse | None
     error_message: str | None
+    execution_mode: Literal["background", "request_chunks"] = "background"
 
 
 @router.post("", response_model=ExperimentResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -241,6 +242,15 @@ def export_experiment(experiment_id: str, format: Literal["json", "csv"] = "json
             row.update({key: paired[point["probability"]][key] for key in paired_fields} if point["probability"] in paired else {})
             writer.writerow(row)
     return Response(output.getvalue(), media_type="text/csv; charset=utf-8", headers=headers)
+
+
+@router.post("/{experiment_id}/advance", response_model=ExperimentResponse)
+def advance_experiment(experiment_id: str) -> dict[str, object]:
+    advance = getattr(experiment_manager, "advance", experiment_manager.store.get)
+    record = advance(experiment_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="The requested experiment was not found.")
+    return record
 
 
 @router.post(

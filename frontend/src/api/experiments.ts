@@ -105,6 +105,7 @@ export type DisagreementSample = {
 };
 
 export type Experiment = {
+  execution_mode?: "background" | "request_chunks";
   id: string;
   status: ExperimentStatus;
   created_at: string;
@@ -165,7 +166,15 @@ export async function getExperiment(
   const response = await fetch(`${API_URL}/api/experiments/${experimentId}`, {
     signal,
   });
-  return readExperimentResponse(response);
+  const experiment = await readExperimentResponse(response);
+  if (experiment.execution_mode === "request_chunks" &&
+      ["queued", "running"].includes(experiment.status)) {
+    return readExperimentResponse(await fetch(
+      `${API_URL}/api/experiments/${experimentId}/advance`,
+      { method: "POST", signal },
+    ));
+  }
+  return experiment;
 }
 
 export async function cancelExperiment(experimentId: string) {

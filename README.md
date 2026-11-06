@@ -87,7 +87,9 @@ For another frontend origin, set `QLDPC_FRONTEND_ORIGINS` to a comma-separated l
 ## Deployment
 
 See [Deploy from GitHub to Vercel](docs/deployment.md) for the frontend build
-settings, required hosted API URL, backend persistence, and GitHub auto-deploys.
+settings, backend persistence, and GitHub auto-deploys. Both the frontend and API
+are hosted on Vercel. Deployed experiments save batches to private Vercel Blob;
+keep the page open to run trials, or reopen a saved run to resume it later.
 
 ## Current boundary
 

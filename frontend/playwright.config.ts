@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
+const remoteBaseURL = process.env.PLAYWRIGHT_BASE_URL;
 const python =
   process.platform === "win32"
     ? ".venv/Scripts/python.exe"
@@ -15,13 +16,13 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:5184",
+    baseURL: remoteBaseURL ?? "http://127.0.0.1:5184",
     channel: process.env.PLAYWRIGHT_CHANNEL,
     viewport: { width: 1440, height: 1000 },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  webServer: [
+  webServer: remoteBaseURL ? undefined : [
     {
       command: `"${python}" -m uvicorn app.main:app --host 127.0.0.1 --port 8011`,
       cwd: path.join(directory, "../backend"),

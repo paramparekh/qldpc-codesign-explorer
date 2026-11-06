@@ -202,8 +202,13 @@ def run_simulation(
     should_cancel: CancelCheck | None = None,
     on_progress: ProgressCallback | None = None,
     comparison_decoder: Decoder | None = None,
+    start_trial: int = 0,
+    max_trials: int | None = None,
+    max_seconds: float | None = None,
 ) -> SimulationResult:
     _validate(config)
+    if start_trial < 0 or (max_trials is not None and max_trials < 0):
+        raise ValueError("Trial offsets and batch sizes cannot be negative.")
     cancel_check = should_cancel or (lambda: False)
     total_planned = len(config.probabilities) * config.trials_per_probability
     total_completed = 0
@@ -215,6 +220,7 @@ def run_simulation(
     disagreements: list[DisagreementSample] = []
     cancelled = False
     simulation_started = perf_counter()
+    batch_finished = False
 
     for probability_index, probability in enumerate(config.probabilities):
         point_started = perf_counter()
@@ -223,7 +229,13 @@ def run_simulation(
         paired_counts = [0, 0, 0, 0]
         different_corrections = 0
 
-        for trial_index in range(config.trials_per_probability):
+        first_trial = max(0, start_trial - probability_index * config.trials_per_probability)
+        for trial_index in range(first_trial, config.trials_per_probability):
+            if ((max_trials is not None and total_completed >= max_trials)
+                    or (max_seconds is not None and total_completed > 0
+                        and perf_counter() - simulation_started >= max_seconds)):
+                batch_finished = True
+                break
             if cancel_check():
                 cancelled = True
                 break
@@ -265,7 +277,7 @@ def run_simulation(
                 paired_outcomes.append(PairedOutcome(
                     probability, primary_totals.completed, *paired_counts, different_corrections,
                 ))
-        if cancelled:
+        if cancelled or batch_finished:
             break
 
     common = dict(

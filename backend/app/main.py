@@ -2,6 +2,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.codes import router as codes_router
 from app.api.decoders import router as decoders_router
@@ -33,6 +34,15 @@ app.include_router(decoders_router, prefix="/api")
 app.include_router(experiments_router, prefix="/api")
 app.include_router(injections_router, prefix="/api")
 app.include_router(observations_router, prefix="/api")
+
+if os.getenv("VERCEL") == "1":
+    from vercel.blob.errors import BlobError
+
+    @app.exception_handler(BlobError)
+    async def storage_unavailable(_request, _error):
+        return JSONResponse(status_code=503, content={
+            "detail": "Saved-results storage is temporarily unavailable. Please retry.",
+        })
 
 
 @app.get("/", tags=["system"])

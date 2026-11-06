@@ -346,8 +346,9 @@ function ExperimentProgress({ experiment }: { experiment: Experiment }) {
         )}
       </div>
       <p className="section-intro">
-        You can leave this stage while the experiment continues. Completed
-        results are saved by the backend.
+        {experiment.execution_mode === "request_chunks"
+          ? "Keep this page open while trials run. Closing it pauses the experiment; reopen it from saved runs to resume. Completed batches are saved automatically."
+          : "You can leave this stage while the experiment continues. Completed results are saved by the backend."}
       </p>
       {error && (
         <p className="inline-error" role="alert">

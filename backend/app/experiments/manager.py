@@ -123,4 +123,9 @@ class ExperimentManager:
                 self._cancel_events.pop(experiment_id, None)
 
 
-experiment_manager = ExperimentManager(ExperimentStore(default_database_path()))
+if os.getenv("VERCEL") == "1":
+    from app.experiments.serverless import ServerlessExperimentManager
+
+    experiment_manager = ServerlessExperimentManager()
+else:
+    experiment_manager = ExperimentManager(ExperimentStore(default_database_path()))
