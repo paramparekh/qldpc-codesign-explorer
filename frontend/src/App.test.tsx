@@ -44,10 +44,30 @@ const codeDetail = {
   qubit_partition: { vertex_vertex: 9, check_check: 4 },
   provenance: "HGP(H, H) with H=[[1,1,0],[0,1,1]].",
   validation: [
-    { id: "binary", label: "Binary matrices", status: "passed", detail: "Every entry is binary." },
-    { id: "dimensions", label: "Compatible dimensions", status: "passed", detail: "Both have 13 columns." },
-    { id: "orthogonality", label: "CSS orthogonality", status: "passed", detail: "The product is zero." },
-    { id: "distance", label: "Exact distance", status: "passed", detail: "Exact search gives distance 3." },
+    {
+      id: "binary",
+      label: "Binary matrices",
+      status: "passed",
+      detail: "Every entry is binary.",
+    },
+    {
+      id: "dimensions",
+      label: "Compatible dimensions",
+      status: "passed",
+      detail: "Both have 13 columns.",
+    },
+    {
+      id: "orthogonality",
+      label: "CSS orthogonality",
+      status: "passed",
+      detail: "The product is zero.",
+    },
+    {
+      id: "distance",
+      label: "Exact distance",
+      status: "passed",
+      detail: "Exact search gives distance 3.",
+    },
   ],
   supported_error_models: ["manual_pauli", "seeded_code_capacity"],
   measurement_model: "Perfect syndrome measurement",
@@ -70,7 +90,9 @@ function injectionResponse(payload: {
     });
   } else {
     ["I", "X", "Y", "I", "Z", "Z", "Y", "I", "I", "I", "Z", "X", "I"].forEach(
-      (pauli, index) => { qubits[index] = pauli as "I" | "X" | "Y" | "Z"; },
+      (pauli, index) => {
+        qubits[index] = pauli as "I" | "X" | "Y" | "Z";
+      },
     );
   }
   return {
@@ -88,20 +110,46 @@ function injectionResponse(payload: {
       z: qubits.filter((pauli) => pauli === "Z").length,
     },
     reproducibility: {
-      probability: payload.mode === "seeded_code_capacity" ? payload.probability : null,
+      probability:
+        payload.mode === "seeded_code_capacity" ? payload.probability : null,
       seed: payload.mode === "seeded_code_capacity" ? payload.seed : null,
-      generator_version: payload.mode === "seeded_code_capacity" ? "splitmix64-v1" : null,
+      generator_version:
+        payload.mode === "seeded_code_capacity" ? "splitmix64-v1" : null,
     },
   };
 }
 
-function observationResponse(payload: { qubits: Array<"I" | "X" | "Y" | "Z"> }) {
-  const xSupports = [[1, 4, 10], [2, 5, 10, 11], [3, 6, 11], [4, 7, 12], [5, 8, 12, 13], [6, 9, 13]];
-  const zSupports = [[1, 2, 10], [2, 3, 11], [4, 5, 10, 12], [5, 6, 11, 13], [7, 8, 12], [8, 9, 13]];
-  const errorX = payload.qubits.map((pauli) => Number(pauli === "X" || pauli === "Y"));
-  const errorZ = payload.qubits.map((pauli) => Number(pauli === "Z" || pauli === "Y"));
+function observationResponse(payload: {
+  qubits: Array<"I" | "X" | "Y" | "Z">;
+}) {
+  const xSupports = [
+    [1, 4, 10],
+    [2, 5, 10, 11],
+    [3, 6, 11],
+    [4, 7, 12],
+    [5, 8, 12, 13],
+    [6, 9, 13],
+  ];
+  const zSupports = [
+    [1, 2, 10],
+    [2, 3, 11],
+    [4, 5, 10, 12],
+    [5, 6, 11, 13],
+    [7, 8, 12],
+    [8, 9, 13],
+  ];
+  const errorX = payload.qubits.map((pauli) =>
+    Number(pauli === "X" || pauli === "Y"),
+  );
+  const errorZ = payload.qubits.map((pauli) =>
+    Number(pauli === "Z" || pauli === "Y"),
+  );
 
-  const group = (prefix: "X" | "Z", supports: number[][], component: number[]) => {
+  const group = (
+    prefix: "X" | "Z",
+    supports: number[][],
+    component: number[],
+  ) => {
     const checks = supports.map((support, index) => {
       const errorQubits = support.filter((qubit) => component[qubit - 1]);
       return {
@@ -134,7 +182,10 @@ function observationResponse(payload: { qubits: Array<"I" | "X" | "Y" | "Z"> }) 
   };
 }
 
-function decodeResponse(payload: { qubits: Array<"I" | "X" | "Y" | "Z"> }) {
+function decodeResponse(payload: {
+  qubits: Array<"I" | "X" | "Y" | "Z">;
+  decoder_id?: string;
+}) {
   const pattern = (qubits: Array<"I" | "X" | "Y" | "Z">) => ({
     qubits,
     error_x: qubits.map((pauli) => Number(pauli === "X" || pauli === "Y")),
@@ -151,20 +202,30 @@ function decodeResponse(payload: { qubits: Array<"I" | "X" | "Y" | "Z"> }) {
     payload.qubits[1] === "X" &&
     payload.qubits.slice(2).every((pauli) => pauli === "I");
   const correctionQubits = logicalFailure
-    ? Array.from({ length: 13 }, (_, index) => index === 2 ? "X" as const : "I" as const)
+    ? Array.from({ length: 13 }, (_, index) =>
+        index === 2 ? ("X" as const) : ("I" as const),
+      )
     : payload.qubits;
   const residualQubits = logicalFailure
-    ? Array.from({ length: 13 }, (_, index) => index < 3 ? "X" as const : "I" as const)
+    ? Array.from({ length: 13 }, (_, index) =>
+        index < 3 ? ("X" as const) : ("I" as const),
+      )
     : Array.from({ length: 13 }, () => "I" as const);
   return {
     schema_version: 1,
     code_id: "hgp_rep3_v1",
     code_version: "1.0.0",
     decoder: {
-      id: "exact-css-min-weight-v1",
-      name: "Exact minimum-weight CSS decoder",
-      method: "Exact search for the lightest X and Z correction components with deterministic tie-breaking.",
-      scaling_note: "Exact search is a reference method for the current 13-qubit code.",
+      id: payload.decoder_id ?? "exact-css-min-weight-v1",
+      name:
+        payload.decoder_id === "bp-osd-css-v1"
+          ? "BP+OSD CSS decoder"
+          : "Exact minimum-weight CSS decoder",
+      method:
+        "Exact search for the lightest X and Z correction components with deterministic tie-breaking.",
+      scaling_note:
+        "Exact search is a reference method for the current 13-qubit code.",
+      settings: {},
     },
     status: logicalFailure ? "logical_failure" : "corrected",
     success: !logicalFailure,
@@ -186,7 +247,8 @@ function decodeResponse(payload: { qubits: Array<"I" | "X" | "Y" | "Z"> }) {
       syndrome: logicalFailure ? [0, 1, 0, 0, 0, 0] : [1, 0, 1, 1, 0, 0],
       correction_support: logicalFailure ? [3] : [1, 5],
       correction_weight: logicalFailure ? 1 : 2,
-      minimum_candidate_count: logicalFailure ? 1 : 2,
+      minimum_candidate_count:
+        payload.decoder_id === "bp-osd-css-v1" ? null : logicalFailure ? 1 : 2,
     },
     z_component: {
       component: "Z",
@@ -194,7 +256,8 @@ function decodeResponse(payload: { qubits: Array<"I" | "X" | "Y" | "Z"> }) {
       syndrome: logicalFailure ? [0, 0, 0, 0, 0, 0] : [0, 1, 0, 0, 1, 0],
       correction_support: logicalFailure ? [] : [5],
       correction_weight: logicalFailure ? 0 : 1,
-      minimum_candidate_count: 1,
+      minimum_candidate_count:
+        payload.decoder_id === "bp-osd-css-v1" ? null : 1,
     },
   };
 }
@@ -203,6 +266,8 @@ function experimentResponse(payload: {
   probabilities: number[];
   trials_per_probability: number;
   seed: number;
+  decoder_id?: string;
+  comparison_decoder_id?: string | null;
 }) {
   const points = payload.probabilities.map((probability, index) => {
     const failures = index === 0 ? 0 : 15;
@@ -226,8 +291,10 @@ function experimentResponse(payload: {
     };
   });
   const identity = Array.from({ length: 13 }, () => "I" as const);
-  const logicalX = Array.from({ length: 13 }, (_, index) => index < 3 ? "X" as const : "I" as const);
-  return {
+  const logicalX = Array.from({ length: 13 }, (_, index) =>
+    index < 3 ? ("X" as const) : ("I" as const),
+  );
+  const experiment = {
     id: "experiment-1",
     status: "completed",
     created_at: "2026-10-03T12:00:00Z",
@@ -242,10 +309,13 @@ function experimentResponse(payload: {
       seed: payload.seed,
       confidence_level: 0.95,
       saved_failure_limit: 10,
+      comparison_decoder_id: payload.comparison_decoder_id,
     },
     progress: {
-      completed_trials: payload.probabilities.length * payload.trials_per_probability,
-      total_trials: payload.probabilities.length * payload.trials_per_probability,
+      completed_trials:
+        payload.probabilities.length * payload.trials_per_probability,
+      total_trials:
+        payload.probabilities.length * payload.trials_per_probability,
       fraction: 1,
       current_probability: null,
       current_point_trials: 0,
@@ -262,23 +332,59 @@ function experimentResponse(payload: {
       error_model: "independent depolarizing data-qubit errors",
       measurement_model: "perfect syndrome measurement",
       success_criterion: "residual is empty or a stabilizer",
-      total_trials_planned: payload.probabilities.length * payload.trials_per_probability,
-      total_trials_completed: payload.probabilities.length * payload.trials_per_probability,
+      total_trials_planned:
+        payload.probabilities.length * payload.trials_per_probability,
+      total_trials_completed:
+        payload.probabilities.length * payload.trials_per_probability,
       cancelled: false,
       runtime_seconds: 1.2,
       points,
-      saved_failures: [{
-        probability: payload.probabilities[1] ?? payload.probabilities[0],
-        trial_number: 7,
-        trial_seed: 987654,
-        error: logicalX,
-        correction: identity.map((pauli, index) => index === 2 ? "X" as const : pauli),
-        residual: logicalX,
-        x_classification: "logical",
-        z_classification: "none",
-      }],
+      saved_failures: [
+        {
+          probability: payload.probabilities[1] ?? payload.probabilities[0],
+          trial_number: 7,
+          trial_seed: "7040799266656314811",
+          error: logicalX,
+          correction: identity.map((pauli, index) =>
+            index === 2 ? ("X" as const) : pauli,
+          ),
+          residual: logicalX,
+          x_classification: "logical",
+          z_classification: "none",
+        },
+      ],
     },
     error_message: null,
+  };
+  const comparison = payload.comparison_decoder_id
+    ? {
+        ...experiment.result,
+        decoder_id: "bp-osd-css-v1",
+        decoder_name: "BP+OSD CSS decoder",
+        points: points.map((point) => ({
+          ...point,
+          average_decode_time_ms: 0.25,
+        })),
+        saved_failures: [],
+        decoder_settings: { library: "ldpc", osd_order: 2 },
+      }
+    : null;
+  return {
+    ...experiment,
+    result: {
+      ...experiment.result,
+      comparison,
+      paired_outcomes: points.map((point) => ({
+        probability: point.probability,
+        trials_completed: point.trials_completed,
+        both_succeed: point.successes,
+        primary_only_succeeds: 0,
+        comparison_only_succeeds: 0,
+        both_fail: point.logical_failures,
+        different_corrections: 0,
+      })),
+      disagreements: [],
+    },
   };
 }
 
@@ -288,19 +394,47 @@ describe("Configure stage", () => {
       "fetch",
       vi.fn((request: string | URL | Request, options?: RequestInit) => {
         const url = String(request);
+        if (url.includes("/api/experiments?")) return jsonResponse([]);
         if (url.endsWith("/api/injections")) {
-          return jsonResponse(injectionResponse(JSON.parse(String(options?.body))));
+          return jsonResponse(
+            injectionResponse(JSON.parse(String(options?.body))),
+          );
         }
         if (url.endsWith("/api/observations")) {
-          return jsonResponse(observationResponse(JSON.parse(String(options?.body))));
+          return jsonResponse(
+            observationResponse(JSON.parse(String(options?.body))),
+          );
         }
         if (url.endsWith("/api/experiments")) {
-          return jsonResponse(experimentResponse(JSON.parse(String(options?.body))));
+          return jsonResponse(
+            experimentResponse(JSON.parse(String(options?.body))),
+          );
         }
         if (url.endsWith("/api/decoders") && options?.method === "POST") {
-          return jsonResponse(decodeResponse(JSON.parse(String(options?.body))));
+          return jsonResponse(
+            decodeResponse(JSON.parse(String(options?.body))),
+          );
         }
-        return url.endsWith("/api/codes") ? jsonResponse([summary]) : jsonResponse(codeDetail);
+        if (url.endsWith("/api/decoders"))
+          return jsonResponse([
+            {
+              id: "exact-css-min-weight-v1",
+              name: "Exact minimum-weight CSS decoder",
+              method: "Exact",
+              scaling_note: "Small code",
+              settings: {},
+            },
+            {
+              id: "bp-osd-css-v1",
+              name: "BP+OSD CSS decoder",
+              method: "BP+OSD",
+              scaling_note: "Heuristic",
+              settings: {},
+            },
+          ]);
+        return url.endsWith("/api/codes")
+          ? jsonResponse([summary])
+          : jsonResponse(codeDetail);
       }),
     );
   });
@@ -313,9 +447,13 @@ describe("Configure stage", () => {
   it("loads one qLDPC code and presents its calculated checks", async () => {
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Selected code" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Selected code" }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("HGP repetition-3 code")).toHaveLength(2);
-    expect(screen.getByLabelText("Code parameters")).toHaveTextContent("[[13, 1, 3]]");
+    expect(screen.getByLabelText("Code parameters")).toHaveTextContent(
+      "[[13, 1, 3]]",
+    );
     expect(screen.getAllByText("4/4 passed")).toHaveLength(2);
     expect(screen.getByText("CSS orthogonality")).toBeInTheDocument();
     expect(screen.queryByText(/surface code/i)).not.toBeInTheDocument();
@@ -327,9 +465,13 @@ describe("Configure stage", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Selected code" });
-    await user.click(screen.getByRole("radio", { name: /generate errors from a seed/i }));
+    await user.click(
+      screen.getByRole("radio", { name: /generate errors from a seed/i }),
+    );
 
-    const probability = screen.getByRole("spinbutton", { name: /error probability/i });
+    const probability = screen.getByRole("spinbutton", {
+      name: /error probability/i,
+    });
     const seed = screen.getByRole("spinbutton", { name: /random seed/i });
     await user.clear(probability);
     await user.type(probability, "0.02");
@@ -341,7 +483,9 @@ describe("Configure stage", () => {
     expect(screen.getByText("Complete")).toBeInTheDocument();
     expect(screen.getByText("Next")).toBeInTheDocument();
     expect(screen.getByText("p = 0.02")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Change setup" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Change setup" }),
+    ).toBeInTheDocument();
   });
 
   it("lets the user retry when the code API is offline", async () => {
@@ -360,7 +504,9 @@ describe("Configure stage", () => {
     );
     await user.click(screen.getByRole("button", { name: "Try again" }));
 
-    expect(await screen.findByRole("heading", { name: "Selected code" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Selected code" }),
+    ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
@@ -370,38 +516,101 @@ describe("Configure stage", () => {
 
     await screen.findByRole("heading", { name: "Selected code" });
     await user.click(screen.getByRole("button", { name: "Save setup" }));
-    await user.click(screen.getByRole("button", { name: "Continue to error selection" }));
+    await user.click(
+      screen.getByRole("button", { name: "Continue to error selection" }),
+    );
 
-    expect(screen.getByRole("heading", { name: "Add errors to the data qubits." })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Add errors to the data qubits." }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Qubit group A")).toBeInTheDocument();
     expect(screen.getByText("Qubit group B")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Qubit 1, currently I; apply X/i }));
-    await user.click(screen.getByRole("radio", { name: /Y.*Bit and phase components/i }));
-    await user.click(screen.getByRole("button", { name: /Qubit 5, currently I; apply Y/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Qubit 1, currently I; apply X/i }),
+    );
+    await user.click(
+      screen.getByRole("radio", { name: /Y.*Bit and phase components/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Qubit 5, currently I; apply Y/i }),
+    );
 
     expect(screen.getByLabelText("Error counts")).toHaveTextContent("Weight2");
     expect(screen.getByText("Q1: X, Q5: Y")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Save error selection" }));
+    await user.click(
+      screen.getByRole("button", { name: "Save error selection" }),
+    );
 
     expect(await screen.findByRole("status")).toHaveTextContent("Errors saved");
     expect(screen.getByText("Observe").closest("li")).toHaveTextContent("Next");
-    expect(screen.getByRole("button", { name: "Change errors" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Change errors" }),
+    ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Continue to Observe" }));
-    expect(await screen.findByRole("heading", { name: "See which checks detect the errors." })).toBeInTheDocument();
-    expect(screen.getByLabelText("X-type checks syndrome 0 1 0 0 1 0")).toBeInTheDocument();
-    expect(screen.getByLabelText("Z-type checks syndrome 1 0 1 1 0 0")).toBeInTheDocument();
-    expect(screen.getByText("The code detected the errors")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Observe" }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: "See which checks detect the errors.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("X-type checks syndrome 0 1 0 0 1 0"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Z-type checks syndrome 1 0 1 1 0 0"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("The code detected the errors"),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Trace X1 on qubits" }),
+    );
+    expect(screen.getByText("Tracing X1: No signal (0)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Qubit 1: X")).toHaveClass("qubit-in-check");
+    expect(screen.getByLabelText("Qubit 4: I")).toHaveClass("qubit-in-check");
+    expect(screen.getByLabelText("Qubit 5: Y")).not.toHaveClass(
+      "qubit-in-check",
+    );
     expect(screen.getByText("Decode").closest("li")).toHaveTextContent("Next");
 
-    await user.click(screen.getByRole("button", { name: "Continue to Decode" }));
-    expect(await screen.findByRole("heading", { name: "Apply a correction and check the result." })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Exact minimum-weight CSS decoder" })).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Decode" }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: "Apply a correction and check the result.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Exact minimum-weight CSS decoder" }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Correction, qubit 5: Y")).toBeInTheDocument();
     expect(screen.getByLabelText("Residual, qubit 5: I")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Decode succeeded");
-    expect(screen.getByText("Decode").closest("li")).toHaveTextContent("Complete");
+    expect(screen.getByText("Decode").closest("li")).toHaveTextContent(
+      "Complete",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Decoder" }),
+      "bp-osd-css-v1",
+    );
+    expect(
+      await screen.findByRole("heading", { name: "BP+OSD CSS decoder" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Not enumerated by BP+OSD")).toHaveLength(2);
+    const decodeCalls = vi
+      .mocked(fetch)
+      .mock.calls.filter(
+        ([url, options]) =>
+          String(url).endsWith("/api/decoders") && options?.method === "POST",
+      );
+    expect(JSON.parse(String(decodeCalls.at(-1)?.[1]?.body))).toMatchObject({
+      decoder_id: "bp-osd-css-v1",
+      physical_error_probability: 0.05,
+    });
   });
 
   it("generates the same errors from the same probability and seed", async () => {
@@ -409,24 +618,36 @@ describe("Configure stage", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Selected code" });
-    await user.click(screen.getByRole("radio", { name: /generate errors from a seed/i }));
-    const probability = screen.getByRole("spinbutton", { name: /error probability/i });
+    await user.click(
+      screen.getByRole("radio", { name: /generate errors from a seed/i }),
+    );
+    const probability = screen.getByRole("spinbutton", {
+      name: /error probability/i,
+    });
     const seed = screen.getByRole("spinbutton", { name: /random seed/i });
     await user.clear(probability);
     await user.type(probability, "0.5");
     await user.clear(seed);
     await user.type(seed, "42");
     await user.click(screen.getByRole("button", { name: "Save setup" }));
-    await user.click(screen.getByRole("button", { name: "Continue to error selection" }));
+    await user.click(
+      screen.getByRole("button", { name: "Continue to error selection" }),
+    );
 
     expect(screen.getAllByText("p = 0.5")).toHaveLength(2);
     expect(screen.getAllByText("42")).toHaveLength(2);
-    await user.click(screen.getByRole("button", { name: "Generate error pattern" }));
+    await user.click(
+      screen.getByRole("button", { name: "Generate error pattern" }),
+    );
 
     expect(await screen.findByLabelText("Qubit 2: X")).toBeInTheDocument();
     expect(screen.getByLabelText("Qubit 3: Y")).toBeInTheDocument();
-    expect(screen.getByText("Q2: X, Q3: Y, Q5: Z, Q6: Z, Q7: Y, Q11: Z, Q12: X")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Save error selection" }));
+    expect(
+      screen.getByText("Q2: X, Q3: Y, Q5: Z, Q6: Z, Q7: Y, Q11: Z, Q12: X"),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Save error selection" }),
+    );
 
     expect(screen.getByRole("status")).toHaveTextContent("Errors saved");
     expect(screen.getByText("Observe").closest("li")).toHaveTextContent("Next");
@@ -438,20 +659,40 @@ describe("Configure stage", () => {
 
     await screen.findByRole("heading", { name: "Selected code" });
     await user.click(screen.getByRole("button", { name: "Save setup" }));
-    await user.click(screen.getByRole("button", { name: "Continue to error selection" }));
-    await user.click(screen.getByRole("button", { name: /Qubit 1, currently I; apply X/i }));
-    await user.click(screen.getByRole("button", { name: /Qubit 2, currently I; apply X/i }));
-    await user.click(screen.getByRole("button", { name: "Save error selection" }));
-    await user.click(screen.getByRole("button", { name: "Continue to Observe" }));
+    await user.click(
+      screen.getByRole("button", { name: "Continue to error selection" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Qubit 1, currently I; apply X/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Qubit 2, currently I; apply X/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Save error selection" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Observe" }),
+    );
     await screen.findByRole("heading", { name: "Observation summary" });
-    await user.click(screen.getByRole("button", { name: "Continue to Decode" }));
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Decode" }),
+    );
 
-    expect(await screen.findByRole("heading", { name: "Logical decoding failure" })).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Decode did not preserve the logical state");
+    expect(
+      await screen.findByRole("heading", { name: "Logical decoding failure" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Decode did not preserve the logical state",
+    );
     expect(screen.getByLabelText("Correction, qubit 3: X")).toBeInTheDocument();
     expect(screen.getByLabelText("Residual, qubit 3: X")).toBeInTheDocument();
-    expect(screen.getByText("Logical operation — decoding failed")).toBeInTheDocument();
-    expect(screen.getByText("Residual signals").parentElement).toHaveTextContent("0");
+    expect(
+      screen.getByText("Logical operation — decoding failed"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Residual signals").parentElement,
+    ).toHaveTextContent("0");
   });
 
   it("runs a batch experiment and presents uncertainty and replay information", async () => {
@@ -460,25 +701,138 @@ describe("Configure stage", () => {
 
     await screen.findByRole("heading", { name: "Selected code" });
     await user.click(screen.getByRole("button", { name: "Save setup" }));
-    await user.click(screen.getByRole("button", { name: "Continue to error selection" }));
-    await user.click(screen.getByRole("button", { name: "Save with no errors" }));
-    await user.click(screen.getByRole("button", { name: "Continue to Observe" }));
+    await user.click(
+      screen.getByRole("button", { name: "Continue to error selection" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Save with no errors" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Observe" }),
+    );
     await screen.findByRole("heading", { name: "Observation summary" });
-    await user.click(screen.getByRole("button", { name: "Continue to Decode" }));
-    await screen.findByRole("heading", { name: "Exact minimum-weight CSS decoder" });
-    await user.click(screen.getByRole("button", { name: "Continue to Results" }));
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Decode" }),
+    );
+    await screen.findByRole("heading", {
+      name: "Exact minimum-weight CSS decoder",
+    });
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Results" }),
+    );
 
-    expect(screen.getByRole("heading", { name: "Measure decoder performance across repeated trials." })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Measure decoder performance across repeated trials.",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText("500 trials across 5 points")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Start batch experiment" }));
+    await user.click(
+      screen.getByRole("button", { name: "Start batch experiment" }),
+    );
 
-    expect(await screen.findByRole("heading", { name: "Logical-error rate by physical error probability" })).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: /logical-error rate by physical error probability/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Batch experiment values" })).toHaveTextContent("15%");
-    expect(screen.getByText("Results").closest("li")).toHaveTextContent("Complete");
+    expect(
+      await screen.findByRole("heading", {
+        name: "Logical-error rate by physical error probability",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", {
+        name: /logical-error rate by physical error probability/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Batch experiment values" }),
+    ).toHaveTextContent("15%");
+    expect(screen.getByText("Results").closest("li")).toHaveTextContent(
+      "Complete",
+    );
+    expect(
+      screen.getByRole("heading", { name: "Where decoder outcomes differ" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Batch experiment values" }),
+    ).toHaveTextContent("BP+OSD CSS decoder");
+    expect(screen.getByRole("link", { name: "Download JSON" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/experiment-1/export?format=json"),
+    );
+    expect(screen.getByRole("link", { name: "Download CSV" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/experiment-1/export?format=csv"),
+    );
+    const batchCall = vi
+      .mocked(fetch)
+      .mock.calls.find(
+        ([url, options]) =>
+          String(url).endsWith("/api/experiments") &&
+          options?.method === "POST",
+      );
+    expect(JSON.parse(String(batchCall?.[1]?.body))).toMatchObject({
+      decoder_id: "exact-css-min-weight-v1",
+      comparison_decoder_id: "bp-osd-css-v1",
+    });
 
     await user.click(screen.getByText("Failure 1"));
-    expect(screen.getByText("987654")).toBeInTheDocument();
-    expect(screen.getAllByText("Q1: X, Q2: X, Q3: X").length).toBeGreaterThan(0);
+    expect(screen.getByText("7040799266656314811")).toBeInTheDocument();
+    expect(screen.getAllByText("Q1: X, Q2: X, Q3: X").length).toBeGreaterThan(
+      0,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Inspect this error in Observe" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Observation summary" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Qubit 1: X")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Return to saved results" }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: "Where decoder outcomes differ",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("recovers when loading the decoder list fails", async () => {
+    const user = userEvent.setup();
+    const original = vi.mocked(fetch).getMockImplementation()!;
+    let failed = false;
+    vi.mocked(fetch).mockImplementation((url, options) => {
+      if (
+        String(url).endsWith("/api/decoders") &&
+        options?.method !== "POST" &&
+        !failed
+      ) {
+        failed = true;
+        return Promise.reject(new Error("Decoder service offline"));
+      }
+      return original(url, options);
+    });
+    render(<App />);
+    await screen.findByRole("heading", { name: "Selected code" });
+    await user.click(screen.getByRole("button", { name: "Save setup" }));
+    await user.click(
+      screen.getByRole("button", { name: "Continue to error selection" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Save with no errors" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Observe" }),
+    );
+    await screen.findByRole("heading", { name: "Observation summary" });
+    await user.click(
+      screen.getByRole("button", { name: "Continue to Decode" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Decoder service offline",
+    );
+    await user.click(screen.getByRole("button", { name: "Reload decoders" }));
+    expect(
+      await screen.findByRole("option", { name: "BP+OSD CSS decoder" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

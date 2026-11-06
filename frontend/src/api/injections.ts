@@ -1,4 +1,5 @@
 import type { ErrorModel } from "../state/configuration";
+import { apiError } from "./errors";
 
 export type Pauli = "I" | "X" | "Y" | "Z";
 
@@ -34,7 +35,10 @@ export type InjectionResult = {
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
-export async function createInjection(request: InjectionRequest, signal?: AbortSignal) {
+export async function createInjection(
+  request: InjectionRequest,
+  signal?: AbortSignal,
+) {
   const response = await fetch(`${API_URL}/api/injections`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -43,8 +47,10 @@ export async function createInjection(request: InjectionRequest, signal?: AbortS
   });
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { detail?: string } | null;
-    throw new Error(payload?.detail ?? `Error-pattern request failed with ${response.status}.`);
+    throw await apiError(
+      response,
+      `Error-pattern request failed with ${response.status}.`,
+    );
   }
   return response.json() as Promise<InjectionResult>;
 }

@@ -63,7 +63,7 @@ def get_system_status() -> SystemStatus:
                 id="decoder-service",
                 label="Decoder",
                 status="ready",
-                detail="Decode applies an exact minimum-weight CSS correction and checks its logical effect.",
+                detail="Decode offers exact minimum-weight and BP+OSD CSS corrections and verifies their logical effect.",
             ),
             Capability(
                 id="experiment-service",
@@ -74,7 +74,7 @@ def get_system_status() -> SystemStatus:
         ],
         model_boundaries=[
             "Configure provides one HGP [[13,1,3]] qLDPC code.",
-            "Decode uses exact minimum-weight search for the current 13-qubit code.",
+            "Exact CSS and BP+OSD are compared on the current 13-qubit code; this is not a threshold study.",
             "Errors affect data qubits only, and syndrome measurements have no errors.",
         ],
     )

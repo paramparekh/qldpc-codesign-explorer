@@ -18,12 +18,14 @@ class ExperimentSpec:
     code_version: str
     decoder_id: str
     simulation: SimulationConfig
+    comparison_decoder_id: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "code_id": self.code_id,
             "code_version": self.code_version,
             "decoder_id": self.decoder_id,
+            "comparison_decoder_id": self.comparison_decoder_id,
             **asdict(self.simulation),
         }
 
@@ -80,6 +82,9 @@ class ExperimentManager:
                 raise ValueError("The selected qLDPC code version has changed.")
             if decoder is None:
                 raise ValueError("The selected decoder is no longer available.")
+            comparison_decoder = get_decoder(spec.comparison_decoder_id) if spec.comparison_decoder_id else None
+            if spec.comparison_decoder_id and comparison_decoder is None:
+                raise ValueError("The comparison decoder is no longer available.")
 
             total = len(spec.simulation.probabilities) * spec.simulation.trials_per_probability
             update_interval = max(1, total // 100)
@@ -104,6 +109,7 @@ class ExperimentManager:
                 spec.simulation,
                 should_cancel=cancel_event.is_set,
                 on_progress=update_progress,
+                comparison_decoder=comparison_decoder,
             )
             self.store.finish(
                 experiment_id,

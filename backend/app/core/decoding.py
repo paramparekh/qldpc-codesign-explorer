@@ -13,7 +13,7 @@ class ComponentCorrection:
     syndrome: Vector
     correction: Vector
     weight: int
-    minimum_candidate_count: int
+    minimum_candidate_count: int | None
 
 
 @dataclass(frozen=True)
@@ -83,6 +83,15 @@ def decode_css_error(
 
     x_component = minimum_weight_correction(h_z, syndrome(h_z, error_x))
     z_component = minimum_weight_correction(h_x, syndrome(h_x, error_z))
+    return evaluate_css_correction(h_x, h_z, error_x, error_z, x_component, z_component)
+
+
+def evaluate_css_correction(
+    h_x: Matrix, h_z: Matrix, error_x: Vector, error_z: Vector,
+    x_component: ComponentCorrection, z_component: ComponentCorrection,
+) -> CSSDecodeResult:
+    """Verify any decoder's correction using exact GF(2) stabilizer membership."""
+
     residual_x = tuple(a ^ b for a, b in zip(error_x, x_component.correction, strict=True))
     residual_z = tuple(a ^ b for a, b in zip(error_z, z_component.correction, strict=True))
     residual_x_check_syndrome = syndrome(h_x, residual_z)

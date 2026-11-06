@@ -1,4 +1,5 @@
 import type { Pauli } from "./injections";
+import { apiError } from "./errors";
 
 export type ExperimentStatus =
   | "queued"
@@ -12,6 +13,7 @@ export type ExperimentCreateRequest = {
   code_id: string;
   code_version: string;
   decoder_id: string;
+  comparison_decoder_id?: string | null;
   probabilities: number[];
   trials_per_probability: number;
   seed: number;
@@ -49,7 +51,7 @@ export type ProbabilityResult = {
 export type FailureSample = {
   probability: number;
   trial_number: number;
-  trial_seed: number;
+  trial_seed: string | number;
   error: Pauli[];
   correction: Pauli[];
   residual: Pauli[];
@@ -63,7 +65,7 @@ export type SimulationResult = {
   decoder_name: string;
   code_id: string;
   code_version: string;
-  batch_seed: number;
+  batch_seed: string | number;
   batch_generator_version: string;
   error_generator_version: string;
   error_model: string;
@@ -75,6 +77,31 @@ export type SimulationResult = {
   runtime_seconds: number;
   points: ProbabilityResult[];
   saved_failures: FailureSample[];
+  decoder_settings?: Record<string, string | number>;
+  comparison?: SimulationResult | null;
+  paired_outcomes?: PairedOutcome[];
+  disagreements?: DisagreementSample[];
+};
+
+export type PairedOutcome = {
+  probability: number;
+  trials_completed: number;
+  both_succeed: number;
+  primary_only_succeeds: number;
+  comparison_only_succeeds: number;
+  both_fail: number;
+  different_corrections: number;
+};
+
+export type DisagreementSample = {
+  probability: number;
+  trial_number: number;
+  trial_seed: string | number;
+  error: Pauli[];
+  primary_correction: Pauli[];
+  comparison_correction: Pauli[];
+  primary_success: boolean;
+  comparison_success: boolean;
 };
 
 export type Experiment = {
@@ -83,7 +110,7 @@ export type Experiment = {
   created_at: string;
   started_at: string | null;
   finished_at: string | null;
-  config: ExperimentCreateRequest;
+  config: Omit<ExperimentCreateRequest, "seed"> & { seed: string | number };
   progress: ExperimentProgress;
   result: SimulationResult | null;
   error_message: string | null;
@@ -91,15 +118,37 @@ export type Experiment = {
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
+export function experimentExportUrl(id: string, format: "json" | "csv") {
+  return `${API_URL}/api/experiments/${encodeURIComponent(id)}/export?format=${format}`;
+}
+
+export async function listExperiments(
+  signal?: AbortSignal,
+): Promise<Experiment[]> {
+  const response = await fetch(`${API_URL}/api/experiments?limit=20`, {
+    signal,
+  });
+  if (!response.ok)
+    throw new Error(
+      "Saved experiments could not be loaded. Check the backend connection.",
+    );
+  return response.json();
+}
+
 async function readExperimentResponse(response: Response) {
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { detail?: string } | null;
-    throw new Error(payload?.detail ?? `Experiment request failed with ${response.status}.`);
+    throw await apiError(
+      response,
+      `Experiment request failed with ${response.status}.`,
+    );
   }
   return response.json() as Promise<Experiment>;
 }
 
-export async function createExperiment(request: ExperimentCreateRequest, signal?: AbortSignal) {
+export async function createExperiment(
+  request: ExperimentCreateRequest,
+  signal?: AbortSignal,
+) {
   const response = await fetch(`${API_URL}/api/experiments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -109,14 +158,22 @@ export async function createExperiment(request: ExperimentCreateRequest, signal?
   return readExperimentResponse(response);
 }
 
-export async function getExperiment(experimentId: string, signal?: AbortSignal) {
-  const response = await fetch(`${API_URL}/api/experiments/${experimentId}`, { signal });
+export async function getExperiment(
+  experimentId: string,
+  signal?: AbortSignal,
+) {
+  const response = await fetch(`${API_URL}/api/experiments/${experimentId}`, {
+    signal,
+  });
   return readExperimentResponse(response);
 }
 
 export async function cancelExperiment(experimentId: string) {
-  const response = await fetch(`${API_URL}/api/experiments/${experimentId}/cancel`, {
-    method: "POST",
-  });
+  const response = await fetch(
+    `${API_URL}/api/experiments/${experimentId}/cancel`,
+    {
+      method: "POST",
+    },
+  );
   return readExperimentResponse(response);
 }

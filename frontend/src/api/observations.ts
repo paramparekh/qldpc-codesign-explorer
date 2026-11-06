@@ -1,4 +1,5 @@
 import type { Pauli } from "./injections";
+import { apiError } from "./errors";
 
 export type CheckResult = {
   id: string;
@@ -34,7 +35,10 @@ export type ObservationRequest = {
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
-export async function createObservation(request: ObservationRequest, signal?: AbortSignal) {
+export async function createObservation(
+  request: ObservationRequest,
+  signal?: AbortSignal,
+) {
   const response = await fetch(`${API_URL}/api/observations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -43,8 +47,10 @@ export async function createObservation(request: ObservationRequest, signal?: Ab
   });
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { detail?: string } | null;
-    throw new Error(payload?.detail ?? `Syndrome request failed with ${response.status}.`);
+    throw await apiError(
+      response,
+      `Syndrome request failed with ${response.status}.`,
+    );
   }
   return response.json() as Promise<ObservationResult>;
 }

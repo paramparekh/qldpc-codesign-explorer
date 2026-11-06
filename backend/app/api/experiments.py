@@ -1,6 +1,10 @@
+import csv
+import io
+import json
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import Response
 from pydantic import BaseModel, Field, field_validator
 
 from app.codes.registry import get_fixture
@@ -25,6 +29,7 @@ class ExperimentCreateRequest(BaseModel):
     code_id: str
     code_version: str
     decoder_id: str = "exact-css-min-weight-v1"
+    comparison_decoder_id: str | None = None
     probabilities: tuple[float, ...]
     trials_per_probability: int = Field(ge=1, le=100_000)
     seed: int = Field(ge=0, le=(1 << 63) - 1)
@@ -49,9 +54,10 @@ class ExperimentConfigResponse(BaseModel):
     code_id: str
     code_version: str
     decoder_id: str
+    comparison_decoder_id: str | None = None
     probabilities: tuple[float, ...]
     trials_per_probability: int
-    seed: int
+    seed: str = Field(coerce_numbers_to_str=True)
     confidence_level: float
     saved_failure_limit: int
 
@@ -86,7 +92,7 @@ class ProbabilityResultResponse(BaseModel):
 class FailureSampleResponse(BaseModel):
     probability: float
     trial_number: int
-    trial_seed: int
+    trial_seed: str = Field(coerce_numbers_to_str=True)
     error: tuple[Pauli, ...]
     correction: tuple[Pauli, ...]
     residual: tuple[Pauli, ...]
@@ -100,7 +106,7 @@ class SimulationResultResponse(BaseModel):
     decoder_name: str
     code_id: str
     code_version: str
-    batch_seed: int
+    batch_seed: str = Field(coerce_numbers_to_str=True)
     batch_generator_version: str
     error_generator_version: str
     error_model: str
@@ -112,6 +118,31 @@ class SimulationResultResponse(BaseModel):
     runtime_seconds: float
     points: tuple[ProbabilityResultResponse, ...]
     saved_failures: tuple[FailureSampleResponse, ...]
+    decoder_settings: dict[str, str | int | float] = Field(default_factory=dict)
+    comparison: "SimulationResultResponse | None" = None
+    paired_outcomes: tuple["PairedOutcomeResponse", ...] = ()
+    disagreements: tuple["DisagreementSampleResponse", ...] = ()
+
+
+class PairedOutcomeResponse(BaseModel):
+    probability: float
+    trials_completed: int
+    both_succeed: int
+    primary_only_succeeds: int
+    comparison_only_succeeds: int
+    both_fail: int
+    different_corrections: int
+
+
+class DisagreementSampleResponse(BaseModel):
+    probability: float
+    trial_number: int
+    trial_seed: str = Field(coerce_numbers_to_str=True)
+    error: tuple[Pauli, ...]
+    primary_correction: tuple[Pauli, ...]
+    comparison_correction: tuple[Pauli, ...]
+    primary_success: bool
+    comparison_success: bool
 
 
 class ExperimentResponse(BaseModel):
@@ -138,11 +169,17 @@ def create_experiment(request: ExperimentCreateRequest) -> dict[str, object]:
         )
     if get_decoder(request.decoder_id) is None:
         raise HTTPException(status_code=404, detail="The requested decoder was not found.")
+    if request.comparison_decoder_id:
+        if get_decoder(request.comparison_decoder_id) is None:
+            raise HTTPException(status_code=404, detail="The comparison decoder was not found.")
+        if request.comparison_decoder_id == request.decoder_id:
+            raise HTTPException(status_code=422, detail="Choose two different decoders for comparison.")
 
     spec = ExperimentSpec(
         code_id=code.id,
         code_version=code.version,
         decoder_id=request.decoder_id,
+        comparison_decoder_id=request.comparison_decoder_id,
         simulation=SimulationConfig(
             probabilities=request.probabilities,
             trials_per_probability=request.trials_per_probability,
@@ -165,6 +202,45 @@ def read_experiment(experiment_id: str) -> dict[str, object]:
     if record is None:
         raise HTTPException(status_code=404, detail="The requested experiment was not found.")
     return record
+
+
+@router.get("/{experiment_id}/export")
+def export_experiment(experiment_id: str, format: Literal["json", "csv"] = "json") -> Response:
+    record = experiment_manager.store.get(experiment_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="The requested experiment was not found.")
+    if record["status"] not in ("completed", "cancelled") or record["result"] is None:
+        raise HTTPException(status_code=409, detail="Wait until the experiment finishes or stops before exporting.")
+    payload = ExperimentResponse.model_validate(record).model_dump(mode="json")
+    headers = {"Content-Disposition": f'attachment; filename="qldpc-{experiment_id}.{format}"'}
+    if format == "json":
+        return Response(json.dumps(payload, indent=2), media_type="application/json", headers=headers)
+
+    result = payload["result"]
+    output = io.StringIO(newline="")
+    metadata_fields = [
+        "experiment_id", "status", "code_id", "code_version", "decoder_id", "decoder_name",
+        "decoder_settings", "batch_seed", "batch_generator_version", "error_generator_version",
+        "error_model", "measurement_model", "success_criterion", "primary_decoder_id", "comparison_decoder_id",
+    ]
+    point_fields = list(ProbabilityResultResponse.model_fields)
+    point_fields.remove("confidence_interval")
+    paired_fields = ["both_succeed", "primary_only_succeeds", "comparison_only_succeeds", "both_fail", "different_corrections"]
+    writer = csv.DictWriter(output, fieldnames=metadata_fields + point_fields + ["confidence_lower", "confidence_upper"] + paired_fields)
+    writer.writeheader()
+    paired = {point["probability"]: point for point in result["paired_outcomes"]}
+    for series in [result] + ([result["comparison"]] if result["comparison"] else []):
+        for point in series["points"]:
+            row = {key: series[key] for key in metadata_fields if key in series}
+            row.update(experiment_id=experiment_id, status=record["status"],
+                       decoder_settings=json.dumps(series["decoder_settings"], sort_keys=True),
+                       primary_decoder_id=payload["config"]["decoder_id"],
+                       comparison_decoder_id=payload["config"]["comparison_decoder_id"] or "")
+            row.update({key: point[key] for key in point_fields})
+            row.update(confidence_lower=point["confidence_interval"][0], confidence_upper=point["confidence_interval"][1])
+            row.update({key: paired[point["probability"]][key] for key in paired_fields} if point["probability"] in paired else {})
+            writer.writerow(row)
+    return Response(output.getvalue(), media_type="text/csv; charset=utf-8", headers=headers)
 
 
 @router.post(

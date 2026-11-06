@@ -1232,6 +1232,7 @@ summary:focus-visible {
 /* Results stage */
 
 .results-workspace {
+  grid-template-columns: minmax(0, 1fr);
   max-width: 980px;
   margin-top: 10px;
   display: grid;
@@ -1263,7 +1264,8 @@ summary:focus-visible {
   font-weight: 700;
 }
 
-.batch-field input {
+.batch-field input,
+.batch-field select {
   width: 100%;
   min-height: 42px;
   padding: 9px 11px;
@@ -1273,6 +1275,38 @@ summary:focus-visible {
   border-radius: 6px;
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
+}
+
+.batch-form > .decoder-select { grid-column: 1 / -1; max-width: 520px; }
+.comparison-toggle { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-size: 0.82rem; line-height: 1.5; }
+.comparison-toggle input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--accent); }
+.decoder-controls .decoder-select { max-width: 520px; }
+.chart-secondary .chart-line { stroke: #ad591a; stroke-dasharray: 7 5; }
+.chart-secondary .chart-point, .chart-secondary .chart-interval { stroke: #ad591a; }
+.legend-symbol { color: var(--accent); font-weight: 800; }
+.legend-secondary { color: #ad591a; }
+.export-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.export-actions a { display: inline-flex; width: auto; margin-top: 0; align-items: center; justify-content: center; text-decoration: none; }
+.saved-run-list { display: grid; gap: 10px; margin-top: 16px; }
+.saved-run-list button { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; text-align: left; }
+.inspect-error-action { margin-top: 14px; }
+.check-trace { padding: 14px; margin-top: 18px; background: var(--surface-muted); border: 1px solid var(--border); border-radius: 7px; font-size: 0.8rem; line-height: 1.6; }
+.check-trace p { margin: 4px 0; }
+.qubit-cell.qubit-in-check { outline: 3px solid var(--accent); outline-offset: 2px; }
+.result-method-details dd { overflow-wrap: anywhere; }
+.panel { min-width: 0; }
+.scroll-hint { display: none; color: var(--ink-soft); font-size: 0.76rem; line-height: 1.5; }
+
+@media (max-width: 680px) {
+  .scroll-hint { display: block; }
+}
+
+@media (max-width: 480px) {
+  .stage-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; }
+  .stage-copy p { display: none; }
+  .rail-caption { font-size: 0.8rem; }
+  .chart-key { justify-content: flex-start; }
+  .export-actions a { width: 100%; }
 }
 
 .batch-field small {
@@ -1450,6 +1484,7 @@ summary:focus-visible {
 }
 
 .chart-key {
+  flex-wrap: wrap;
   margin-top: 10px;
   display: flex;
   align-items: center;
@@ -1678,6 +1713,7 @@ summary:focus-visible {
 }
 
 .decode-workspace {
+  grid-template-columns: minmax(0, 1fr);
   max-width: 900px;
   margin-top: 10px;
   display: grid;

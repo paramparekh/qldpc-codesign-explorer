@@ -1,4 +1,11 @@
-import { createContext, useContext, useMemo, useReducer, type Dispatch, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useReducer,
+  type Dispatch,
+  type ReactNode,
+} from "react";
 
 import type { CodeDetail } from "../api/codes";
 import type { DecodeResult } from "../api/decoders";
@@ -8,7 +15,8 @@ import type { ObservationResult } from "../api/observations";
 
 export type ErrorModel = "manual_pauli" | "seeded_code_capacity";
 export type ConfigurationPhase = "editing" | "confirmed";
-export type ActiveStage = "configure" | "inject" | "observe" | "decode" | "results";
+export type ActiveStage =
+  "configure" | "inject" | "observe" | "decode" | "results";
 export type InjectionPhase = "draft" | "confirmed";
 export type StoredInjection = InjectionResult & { phase: InjectionPhase };
 
@@ -23,6 +31,7 @@ export type ConfigurationState = {
   injection: StoredInjection | null;
   observation: ObservationResult | null;
   decoding: DecodeResult | null;
+  decoderId: string;
   experiment: Experiment | null;
 };
 
@@ -42,6 +51,13 @@ type ConfigurationAction =
   | { type: "set-observation"; result: ObservationResult }
   | { type: "open-decode" }
   | { type: "set-decoding"; result: DecodeResult }
+  | { type: "select-decoder"; decoderId: string }
+  | {
+      type: "inspect-error";
+      result: InjectionResult;
+      decoderId: string;
+      probability: number;
+    }
   | { type: "open-results" }
   | { type: "set-experiment"; experiment: Experiment | null };
 
@@ -56,6 +72,7 @@ const initialState: ConfigurationState = {
   injection: null,
   observation: null,
   decoding: null,
+  decoderId: "exact-css-min-weight-v1",
   experiment: null,
 };
 
@@ -75,11 +92,18 @@ function updateConfiguration(
   };
 }
 
-function reducer(state: ConfigurationState, action: ConfigurationAction): ConfigurationState {
+function reducer(
+  state: ConfigurationState,
+  action: ConfigurationAction,
+): ConfigurationState {
   switch (action.type) {
     case "select-code":
-      if (state.codeId === action.code.id) return { ...state, code: action.code };
-      return updateConfiguration(state, { codeId: action.code.id, code: action.code });
+      if (state.codeId === action.code.id)
+        return { ...state, code: action.code };
+      return updateConfiguration(state, {
+        codeId: action.code.id,
+        code: action.code,
+      });
     case "set-error-model":
       return updateConfiguration(state, { errorModel: action.errorModel });
     case "set-error-probability":
@@ -131,13 +155,27 @@ function reducer(state: ConfigurationState, action: ConfigurationAction): Config
         ? { ...state, activeStage: "observe" }
         : state;
     case "set-observation":
-      return { ...state, observation: action.result, decoding: null, experiment: null };
+      return { ...state, observation: action.result, decoding: null };
+    case "select-decoder":
+      return { ...state, decoderId: action.decoderId, decoding: null };
+    case "inspect-error":
+      return {
+        ...state,
+        injection: { ...action.result, phase: "confirmed" },
+        observation: null,
+        decoding: null,
+        decoderId: action.decoderId,
+        errorProbability: action.probability,
+        activeStage: "observe",
+      };
     case "open-decode":
       return state.observation ? { ...state, activeStage: "decode" } : state;
     case "set-decoding":
       return { ...state, decoding: action.result };
     case "open-results":
-      return state.decoding ? { ...state, activeStage: "results" } : state;
+      return state.decoding || state.experiment
+        ? { ...state, activeStage: "results" }
+        : state;
     case "set-experiment":
       return { ...state, experiment: action.experiment };
   }
@@ -148,16 +186,25 @@ type ConfigurationContextValue = {
   dispatch: Dispatch<ConfigurationAction>;
 };
 
-const ConfigurationContext = createContext<ConfigurationContextValue | null>(null);
+const ConfigurationContext = createContext<ConfigurationContextValue | null>(
+  null,
+);
 
 export function ConfigurationProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const value = useMemo(() => ({ state, dispatch }), [state]);
-  return <ConfigurationContext.Provider value={value}>{children}</ConfigurationContext.Provider>;
+  return (
+    <ConfigurationContext.Provider value={value}>
+      {children}
+    </ConfigurationContext.Provider>
+  );
 }
 
 export function useConfiguration() {
   const context = useContext(ConfigurationContext);
-  if (!context) throw new Error("useConfiguration must be used inside ConfigurationProvider.");
+  if (!context)
+    throw new Error(
+      "useConfiguration must be used inside ConfigurationProvider.",
+    );
   return context;
 }

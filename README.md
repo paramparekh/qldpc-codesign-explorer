@@ -2,7 +2,7 @@
 
 An HCI-focused research prototype for exploring how qLDPC codes detect and correct quantum errors.
 
-The complete Configure → Inject → Observe → Decode → Results workflow is implemented. Configure loads a mathematically checked qLDPC hypergraph-product code and saves the error settings. Inject creates Pauli errors through direct qubit selection or a saved probability and seed. Observe calculates both CSS syndrome components and explains every check result. Decode selects an exact minimum-weight correction and verifies whether the logical information was preserved. Results runs reproducible batch experiments and presents logical-error rates, uncertainty intervals, and saved failures.
+The complete Configure → Inject → Observe → Decode → Results workflow is implemented. Configure loads a mathematically checked qLDPC hypergraph-product code and saves the error settings. Inject creates Pauli errors through direct qubit selection or a saved probability and seed. Observe calculates both CSS syndrome components and traces checks to their qubits. Decode offers exact minimum-weight CSS and BP+OSD corrections and verifies whether logical information was preserved. Results compares decoders on identical errors, with confidence intervals, timing, saved failures, and JSON/CSV downloads.
 
 ## Repository layout
 
@@ -22,6 +22,12 @@ study/     Future reproducible notebooks
 - npm 10 or newer
 
 ## Backend
+
+### Start both services on Windows
+
+From the project root, run `./start.ps1 -Install` once to install dependencies and launch the app. Later, run `./start.ps1`. Add `-NoOpen` to leave the browser closed. The script checks service readiness and records logs in `tmp/run-logs/`. Stop the backend before updating its Python code or dependencies, then run the script again. Existing saved experiments remain in `backend/data/experiments.sqlite3`.
+
+### Start services separately
 
 ```powershell
 cd backend
@@ -57,6 +63,32 @@ npm run check
 npm test
 ```
 
+Real-browser workflow checks run against separate services on ports 8011 and 5184 and a separate experiment database:
+
+```powershell
+cd frontend
+npx playwright install chromium
+npm run test:e2e
+```
+
+To use an existing Chrome installation instead, set `$env:PLAYWRIGHT_CHANNEL = 'chrome'` before running the browser checks. Screenshots and failure traces are written to `frontend/test-results/`. Backend tests also use a temporary database, separate from saved application runs.
+
+## Decoder comparison and exports
+
+- Decode lets you switch decoders while keeping the saved error fixed. BP+OSD uses `ldpc==2.4.1`, minimum-sum BP, 30 iterations, parallel scheduling with one thread, and combination-sweep OSD of order 2. Library versions and settings accompany results. See the [upstream decoder documentation](https://software.roffe.eu/ldpc/ldpc/bposd_decoder.html).
+- Results compares both decoders by default. Each sampled error is decoded by both before the next trial starts. Cancellation preserves complete pairs. The trial count is the number of shared error samples; comparison doubles the number of decoder calls.
+- Depolarizing noise has total error probability p and equal X/Y/Z probabilities p/3. Independent CSS decoding uses component priors 2p/3. For a manually chosen pattern, the displayed p is a decoder assumption. At p = 0 the BP prior is floored at 1e-12 for numerical stability.
+- Paired outcome counts distinguish different corrections from different logical outcomes. Saved disagreements and failures can be opened in Observe and Decode; a return button preserves the original result.
+- `GET /api/experiments/{id}/export?format=json` downloads the full saved experiment, including settings and failure examples. `format=csv` downloads one row per decoder and probability, including reproducibility metadata and paired counts. Both support stopped partial runs. Decimal seed strings preserve all 63 bits in browsers and JSON consumers; parse them as integers when replaying in Python.
+- Reopen recent experiments from Results. The confidence bars show Wilson intervals for each decoder's failure proportion; they are not a paired significance test. Timing includes decoder construction and logical verification and depends on the computer and load.
+
+For another frontend origin, set `QLDPC_FRONTEND_ORIGINS` to a comma-separated list of explicit allowed origins before starting the backend. The default allows localhost and 127.0.0.1 on port 5173.
+
+## Deployment
+
+See [Deploy from GitHub to Vercel](docs/deployment.md) for the frontend build
+settings, required hosted API URL, backend persistence, and GitHub auto-deploys.
+
 ## Current boundary
 
-The product is qLDPC-only. Configure provides the HGP repetition-3 `[[13,1,3]]` code. Inject produces a repeatable Pauli-error vector. Observe calculates the syndrome with exact binary arithmetic. Decode uses exact minimum-weight CSS search and distinguishes stabilizer-equivalent success from logical failure. Batch experiments estimate logical-error rates with Wilson confidence intervals. They do not yet constitute a threshold study, and the current system makes no hardware-feasibility claims.
+The product is qLDPC-only. Configure provides the HGP repetition-3 `[[13,1,3]]` code. Inject produces a repeatable Pauli-error vector. Observe calculates the syndrome with exact binary arithmetic. Both decoders distinguish stabilizer-equivalent success from logical failure using the same GF(2) verifier. Exact search minimizes X/Z component weights independently; BP+OSD does not guarantee minimum weight. Neither is claimed to be a maximum-likelihood decoder for correlated X/Z components under depolarizing noise. Batch experiments estimate logical-error rates with Wilson confidence intervals. These small-code comparisons do not constitute a threshold study or demonstrate hardware feasibility. Syndrome measurements are perfect; circuit-level noise and larger code families remain future work.

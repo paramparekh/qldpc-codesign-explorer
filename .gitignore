@@ -9,8 +9,12 @@ frontend/node_modules/
 frontend/dist/
 frontend/coverage/
 frontend/.vite/
+frontend/test-results/
+frontend/playwright-report/
+tmp/e2e*.sqlite3*
 
 .env
 .env.local
+.vercel/
 *.log
 backend/data/*.sqlite3*

@@ -6,6 +6,7 @@ type QubitPatternProps = {
   disabled?: boolean;
   activeTool?: Pauli;
   onSelect?: (index: number) => void;
+  highlightedQubits?: number[];
 };
 
 function QubitSector({
@@ -16,6 +17,7 @@ function QubitSector({
   disabled,
   activeTool,
   onSelect,
+  highlightedQubits = [],
 }: {
   label: string;
   hint: string;
@@ -24,6 +26,7 @@ function QubitSector({
   disabled: boolean;
   activeTool?: Pauli;
   onSelect?: (index: number) => void;
+  highlightedQubits?: number[];
 }) {
   return (
     <section className="qubit-sector" aria-label={label}>
@@ -35,27 +38,34 @@ function QubitSector({
         {values.map((pauli, offset) => {
           const index = start + offset;
           const qubitNumber = index + 1;
-          const action = activeTool === "I" ? "erase the error" : `apply ${activeTool}`;
+          const action =
+            activeTool === "I" ? "erase the error" : `apply ${activeTool}`;
           return (
             <li key={qubitNumber}>
               {onSelect ? (
                 <button
                   aria-label={`Qubit ${qubitNumber}, currently ${pauli}; ${action}`}
-                  className={`qubit-cell pauli-${pauli.toLowerCase()}`}
+                  className={`qubit-cell pauli-${pauli.toLowerCase()} ${highlightedQubits.includes(qubitNumber) ? "qubit-in-check" : ""}`}
                   disabled={disabled}
                   onClick={() => onSelect(index)}
                   type="button"
                 >
                   <span>Q{qubitNumber}</span>
                   <strong>{pauli}</strong>
+                  {highlightedQubits.includes(qubitNumber) && (
+                    <span>In check</span>
+                  )}
                 </button>
               ) : (
                 <div
                   aria-label={`Qubit ${qubitNumber}: ${pauli}`}
-                  className={`qubit-cell pauli-${pauli.toLowerCase()}`}
+                  className={`qubit-cell pauli-${pauli.toLowerCase()} ${highlightedQubits.includes(qubitNumber) ? "qubit-in-check" : ""}`}
                 >
                   <span>Q{qubitNumber}</span>
                   <strong>{pauli}</strong>
+                  {highlightedQubits.includes(qubitNumber) && (
+                    <span>In check</span>
+                  )}
                 </div>
               )}
             </li>
@@ -72,6 +82,7 @@ export function QubitPattern({
   disabled = false,
   activeTool,
   onSelect,
+  highlightedQubits,
 }: QubitPatternProps) {
   const firstRange = `Qubits 1-${vertexPairCount}`;
   const secondRange = `Qubits ${vertexPairCount + 1}-${paulis.length}`;
@@ -84,6 +95,7 @@ export function QubitPattern({
         hint={firstRange}
         label="Qubit group A"
         onSelect={onSelect}
+        highlightedQubits={highlightedQubits}
         start={0}
         values={paulis.slice(0, vertexPairCount)}
       />
@@ -93,6 +105,7 @@ export function QubitPattern({
         hint={secondRange}
         label="Qubit group B"
         onSelect={onSelect}
+        highlightedQubits={highlightedQubits}
         start={vertexPairCount}
         values={paulis.slice(vertexPairCount)}
       />

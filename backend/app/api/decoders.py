@@ -1,7 +1,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.codes.registry import get_fixture
 from app.core.decoding import ComponentCorrection
@@ -16,6 +16,8 @@ class DecodeRequest(BaseModel):
     code_id: str
     code_version: str
     qubits: tuple[Pauli, ...]
+    decoder_id: str = "exact-css-min-weight-v1"
+    physical_error_probability: float = Field(default=0.05, ge=0, le=0.5)
 
 
 class PauliPatternResponse(BaseModel):
@@ -32,7 +34,7 @@ class ComponentDecodeResponse(BaseModel):
     syndrome: tuple[int, ...]
     correction_support: tuple[int, ...]
     correction_weight: int
-    minimum_candidate_count: int
+    minimum_candidate_count: int | None
 
 
 class ResidualResponse(PauliPatternResponse):
@@ -47,6 +49,7 @@ class DecoderMetadata(BaseModel):
     name: str
     method: str
     scaling_note: str
+    settings: dict[str, str | int | float] = Field(default_factory=dict)
 
 
 class DecodeResponse(BaseModel):
@@ -100,15 +103,15 @@ def decode_error(request: DecodeRequest) -> DecodeResponse:
             detail="The saved code version does not match the current code. Return to Configure and try again.",
         )
 
-    decoder = get_decoder("exact-css-min-weight-v1")
+    decoder = get_decoder(request.decoder_id)
     if decoder is None:
-        raise HTTPException(status_code=503, detail="The exact decoder is not available.")
+        raise HTTPException(status_code=404, detail="The requested decoder was not found.")
 
     try:
         if len(request.qubits) != code.n:
             raise ValueError(f"The error must contain exactly {code.n} qubits.")
         original = pattern_from_paulis(request.qubits)
-        result = decoder.decode(code, original)
+        result = decoder.decode(code, original, physical_error_probability=request.physical_error_probability)
         correction = pattern_from_components(
             result.x_component.correction,
             result.z_component.correction,
@@ -139,6 +142,7 @@ def decode_error(request: DecodeRequest) -> DecodeResponse:
             name=decoder.metadata.name,
             method=decoder.metadata.method,
             scaling_note=decoder.metadata.scaling_note,
+            settings={**decoder.metadata.settings, "physical_error_probability": request.physical_error_probability},
         ),
         status="corrected" if result.success else "logical_failure",
         success=result.success,
@@ -165,6 +169,7 @@ def read_decoders() -> tuple[DecoderMetadata, ...]:
             name=decoder.metadata.name,
             method=decoder.metadata.method,
             scaling_note=decoder.metadata.scaling_note,
+            settings=decoder.metadata.settings,
         )
         for decoder in list_decoders()
     )
