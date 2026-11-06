@@ -18,3 +18,4 @@ tmp/e2e*.sqlite3*
 .vercel/
 *.log
 backend/data/*.sqlite3*
+backend/build/

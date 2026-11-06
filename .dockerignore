@@ -1,0 +1,8 @@
+**
+!backend/
+!backend/Dockerfile
+!backend/pyproject.toml
+!backend/app/
+!backend/app/**
+**/__pycache__/
+**/*.pyc

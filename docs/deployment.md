@@ -28,6 +28,33 @@ Check `https://YOUR_API_HOST/api/system/status` before connecting the frontend.
 The API is currently a shared research prototype with no user authentication;
 experiment history is shared among people who can access the API.
 
+### Railway from this GitHub repository
+
+The root `railway.json` builds `backend/Dockerfile`. Keep the Railway service's
+Root Directory at the repository root; the Dockerfile copies only backend code.
+It uses Python 3.12, one Uvicorn worker, the platform's `PORT`, and the API's
+readiness endpoint. It disables sleep and requires a volume mounted at `/data`.
+If Docker is unavailable locally, verify Railway's image build and health check
+before publishing.
+
+1. Create a Railway service from `paramparekh/qldpc-codesign-explorer`, branch
+   `main`. Keep one replica and disable sleep/serverless mode so running
+   experiments can finish between requests.
+2. Attach a persistent volume at `/data` **before the first deployment**. The
+   image sets `QLDPC_EXPERIMENT_DB=/data/experiments.sqlite3`. The volume is
+   configured in Railway, not created by `railway.json`.
+3. Set `QLDPC_FRONTEND_ORIGINS` to the Vercel production origin and redeploy
+   after any origin changes. Add explicit preview origins only when needed.
+4. Generate a public HTTPS domain for port `PORT` and verify
+   `/api/system/status` and a short experiment. Copy the domain's origin into
+   Vercel's `VITE_API_URL` and deploy the frontend.
+5. Verify that a saved experiment remains available after a backend redeploy.
+   Export important results before deployments: an in-progress experiment is
+   marked failed if the backend restarts.
+
+Railway account access and a suitable resource allowance are required. Check
+[Railway pricing](https://railway.com/pricing) before enabling a paid plan.
+
 ## Vercel Git integration
 
 1. Import `paramparekh/qldpc-codesign-explorer` from GitHub into Vercel.
